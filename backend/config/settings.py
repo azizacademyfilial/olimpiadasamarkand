@@ -19,7 +19,7 @@ def env_list(name: str, default: str = '') -> list[str]:
 SECRET_KEY = os.getenv('SECRET_KEY', 'dev-only-secret-key-change-me')
 DEBUG = env_bool('DEBUG', True)
 
-ALLOWED_HOSTS = env_list('ALLOWED_HOSTS', '127.0.0.1,localhost,.railway.app,.up.railway.app')
+ALLOWED_HOSTS = env_list('ALLOWED_HOSTS', '127.0.0.1,localhost,.railway.app,.up.railway.app,0.0.0.0')
 railway_public_domain = os.getenv('RAILWAY_PUBLIC_DOMAIN')
 if railway_public_domain and railway_public_domain not in ALLOWED_HOSTS:
     ALLOWED_HOSTS.append(railway_public_domain)
@@ -72,13 +72,25 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
-DATABASES = {
-    'default': dj_database_url.config(
-        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
-        conn_max_age=600,
-        ssl_require=env_bool('DB_SSL_REQUIRE', False),
-    )
-}
+# DATABASE
+# Railway'da Postgres uchun DATABASE_URL ishlatiladi.
+# Localda yoki DATABASE_URL noto'g'ri/bo'sh bo'lsa SQLite fallback ishlaydi.
+database_url = os.getenv('DATABASE_URL', '').strip()
+if database_url and not database_url.startswith('${{'):
+    DATABASES = {
+        'default': dj_database_url.parse(
+            database_url,
+            conn_max_age=600,
+            ssl_require=env_bool('DB_SSL_REQUIRE', False),
+        )
+    }
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},

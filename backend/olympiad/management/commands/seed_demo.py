@@ -1324,7 +1324,7 @@ class Command(BaseCommand):
             mental_level.save(update_fields=['duration_minutes'])
 
 
-        # Mental arifmetikadan tashqari barcha testlar 40 minut.
+        # Mental arifmetikadan tashqari barcha testlar 30 minut.
         for level in Level.objects.select_related('subject').all():
             if level.subject.name == 'Mental arifmetika':
                 if level.duration_minutes != 5:
@@ -1362,7 +1362,11 @@ class Command(BaseCommand):
                 target_level.save(update_fields=['duration_minutes'])
 
             for old_name in old_level_names:
-                Level.objects.filter(subject=subject, name=old_name).exclude(id=target_level.id).delete()
+                for old_level in Level.objects.filter(subject=subject, name=old_name).exclude(id=target_level.id):
+                    # Agar eski darajaga o'quvchi biriktirilgan bo'lsa, ularni yangi darajaga ko'chiramiz.
+                    Student.objects.filter(subject=subject, level=old_level).update(level=target_level)
+                    Question.objects.filter(subject=subject, level=old_level).delete()
+                    old_level.delete()
 
             Question.objects.filter(subject=subject, level=target_level).delete()
             for text, a, b, c, d, correct in questions:
@@ -1378,7 +1382,8 @@ class Command(BaseCommand):
                 )
 
         rus_tili_1_questions = [('Как правильно:', 'Я говорю по-русский', 'Я говорю по-русски', 'Я говорю русский', '—', 'B'), ('Какое слово — существительное?', 'Красивый', 'Дом', 'Быстро', '—', 'B'), ('Кто это? — Это ___ учитель.', 'мой', 'мне', 'я', '—', 'A'), ('Укажите форму глагола «жить» в 1-м лице единственного числа:', 'Живу', 'Живёт', 'Живёшь', '—', 'A'), ('Сколько будет: два плюс два?', 'Пять', 'Четыре', 'Три', '—', 'B'), ('Моя мама ___ врач.', 'есть', 'быть', '—', '—', 'C'), ('Какое из слов — прилагательное?', 'Стол', 'Большой', 'Читать', '—', 'B'), ('Где вы живёте? — Я живу ___ Ташкенте.', 'на', 'в', 'к', '—', 'B'), ('Как правильно:', 'У меня сестра', 'Я есть сестра', 'Моя сестра меня', '—', 'A'), ('Что означает слово «книга»?', 'Book', 'Chair', 'Pen', '—', 'A'), ('Сегодня ___ хорошая погода.', 'есть', '—', 'быть', '—', 'B'), ('Мой брат учится ___ школе.', 'в', 'на', 'к', '—', 'A'), ('У меня нет ___ (машина).', 'машина', 'машины', 'машиной', '—', 'B'), ('Какое слово лишнее:', 'Апельсин', 'Банан', 'Молоко', 'Яблоко', 'C'), ('Сколько дней в неделе?', 'Шесть', 'Семь', 'Восемь', '—', 'B'), ('Какой день идёт после понедельника?', 'Среда', 'Воскресенье', 'Вторник', '—', 'C'), ('Утром я пью:', 'Сон', 'Завтрак', 'Чай', '—', 'C'), ('Он ___ в библиотеке.', 'работают', 'работает', 'работаешь', '—', 'B'), ('Какое слово — глагол?', 'Читать', 'Стол', 'Книга', '—', 'A'), ('Ты читаешь книгу? — Да, я ___ читаю.', 'её', 'его', 'им', '—', 'A'), ('Поставьте нужное местоимение: Я вижу ___ (you).', 'тебя', 'ты', 'тобой', '—', 'A'), ('У меня два ___ (брат).', 'браты', 'брата', 'братья', '—', 'B'), ('Я люблю ___ (кофе).', 'кофе', 'кофею', 'кофей', '—', 'A'), ('Какой сегодня день? — Сегодня:', 'Утро', 'Суббота', 'Завтра', '—', 'B'), ('Моя подруга очень ___ (kind).', 'добрая', 'добрый', 'добро', '—', 'A'), ('Мои родители живут в ___ (город).', 'город', 'городе', 'городу', '—', 'B'), ('Сколько это стоит? — ___ сто рублей.', 'Это', 'Им', 'Он', '—', 'A'), ('Какое слово обозначает животное?', 'Кошка', 'Дерево', 'Стул', '—', 'A'), ('У тебя есть ручка? — Нет, ___ нет.', 'я', 'её', 'его', '—', 'B'), ('Я хочу ___ суп.', 'ест', 'есть', 'ем', '—', 'B')]
-        reset_single_level('Rus tili', 'Rus tili 1', rus_tili_1_questions, old_level_names=['A1'])
+        # Eski Rus tili darajalari endi ishlatilmaydi; A1/A2/B1 quyida seed qilinadi.
+        # reset_single_level('Rus tili', 'Rus tili 1', rus_tili_1_questions, old_level_names=['A1'])
 
         rus_tili_2_questions = [('Какой глагол употребляется в прошедшем времени?', 'пишет', 'писал', 'пишет', '—', 'B'),
  ('Я видел ___ вчера.', 'он', 'его', 'ему', '—', 'B'),
@@ -1410,7 +1415,8 @@ class Command(BaseCommand):
  ('Какой предлог нужно: Я еду ___ дачу.', 'в', 'на', 'за', '—', 'B'),
  ('Она не знает, ___ ли он придёт.', 'если', 'или', 'придёт', '—', 'A'),
  ('Мы были очень уставшие, ___ пошли спать.', 'так', 'поэтому', 'потому', '—', 'B')]
-        reset_single_level('Rus tili', 'Rus tili 2', rus_tili_2_questions)
+        # Eski Rus tili darajalari endi ishlatilmaydi; A1/A2/B1 quyida seed qilinadi.
+        # reset_single_level('Rus tili', 'Rus tili 2', rus_tili_2_questions)
 
         rus_tili_3_questions = [('Моя сестра не учится в школе, она ещё …', 'младшая', 'молодая', 'маленькая', '—', 'C'),
  ('Такого озера больше нигде нет, оно в мире.', 'редкое', 'единственное', 'единое', '—', 'B'),
@@ -1432,7 +1438,8 @@ class Command(BaseCommand):
  ('Наша кошка всегда спит под…', 'кресло', 'креслом', 'кресле', '—', 'B'),
  ('Мы проехали мимо…', 'остановку', 'остановки', 'остановке', '—', 'B'),
  ('Сейчас в магазине перерыв до…', 'трёх часов', 'трём часам', 'три часа', '—', 'A')]
-        reset_single_level('Rus tili', 'Rus tili 3', rus_tili_3_questions)
+        # Eski Rus tili darajalari endi ishlatilmaydi; A1/A2/B1 quyida seed qilinadi.
+        # reset_single_level('Rus tili', 'Rus tili 3', rus_tili_3_questions)
 
         rus_tili_4_questions = [('Если бы у меня было время, я ....  на курсы рисования.', 'запишусь', 'записался бы', 'записываюсь', 'буду записаться', 'B'),
  ('Какое слово пропущено? Он так и не привык ... рано по утрам.', 'вставанию', 'вставать', 'вставая', 'встать', 'B'),
@@ -1459,7 +1466,8 @@ class Command(BaseCommand):
  ('В нашем городе много ...', 'музее', 'музей', 'музеев', 'музеи', 'C'),
  ('Какое слово лишнее в этом ряду?', 'карандаш', 'кресло', 'диван', 'стул', 'A'),
  ('Он попросил меня ... ему книгу через неделю.', 'вернуть', 'верну', 'возвращать', 'вернёт', 'A')]
-        reset_single_level('Rus tili', 'Rus tili 4', rus_tili_4_questions)
+        # Eski Rus tili darajalari endi ishlatilmaydi; A1/A2/B1 quyida seed qilinadi.
+        # reset_single_level('Rus tili', 'Rus tili 4', rus_tili_4_questions)
 
 
         # IT_LEVELS_START
@@ -1914,7 +1922,22 @@ class Command(BaseCommand):
         rus_subject, _ = Subject.objects.get_or_create(name='Rus tili')
         for _level_name, _questions in rus_tili_custom_levels.items():
             reset_single_level('Rus tili', _level_name, _questions)
-        Level.objects.filter(subject=rus_subject).exclude(name__in=['A1', 'A2', 'B1']).delete()
+        # Eski Rus tili darajalarini xavfsiz tozalash:
+        # ularga o'quvchi biriktirilgan bo'lsa A1/A2/B1 ga ko'chirib, keyin o'chiramiz.
+        rus_allowed_levels = ['A1', 'A2', 'B1']
+        rus_fallback_map = {
+            'Rus tili 1': 'A1',
+            'Rus tili 2': 'A2',
+            'Rus tili 3': 'B1',
+            'Rus tili 4': 'B1',
+        }
+        for old_level in list(Level.objects.filter(subject=rus_subject).exclude(name__in=rus_allowed_levels)):
+            target_name = rus_fallback_map.get(old_level.name, 'A1')
+            target_level = Level.objects.filter(subject=rus_subject, name=target_name).first()
+            if target_level:
+                Student.objects.filter(subject=rus_subject, level=old_level).update(level=target_level)
+            Question.objects.filter(subject=rus_subject, level=old_level).delete()
+            old_level.delete()
         # RUS_TILI_CUSTOM_END
 
 
@@ -2077,7 +2100,26 @@ class Command(BaseCommand):
         matematika_subject, _ = Subject.objects.get_or_create(name='Matematika')
         for _level_name, _questions in matematika_custom_levels.items():
             reset_single_level('Matematika', _level_name, _questions)
-        Level.objects.filter(subject=matematika_subject).exclude(name__in=list(matematika_custom_levels.keys())).delete()
+        # Eski Matematika darajalarini xavfsiz tozalash:
+        # ularga o'quvchi biriktirilgan bo'lsa mos sinfga ko'chirib, keyin o'chiramiz.
+        matematika_allowed_levels = list(matematika_custom_levels.keys())
+        matematika_fallback_map = {
+            'Junior': '1-sinf',
+            'Matematika 1': '1-sinf',
+            'Matematika 2': '2-sinf',
+            'Matematika 3': '4-sinf',
+            'Matematika 4': '4-sinf',
+            'Matematika 5': '5-sinf',
+            'Matematika 6': '6-sinf',
+            'Matematika 10': '10-sinf',
+        }
+        for old_level in list(Level.objects.filter(subject=matematika_subject).exclude(name__in=matematika_allowed_levels)):
+            target_name = matematika_fallback_map.get(old_level.name, '1-sinf')
+            target_level = Level.objects.filter(subject=matematika_subject, name=target_name).first()
+            if target_level:
+                Student.objects.filter(subject=matematika_subject, level=old_level).update(level=target_level)
+            Question.objects.filter(subject=matematika_subject, level=old_level).delete()
+            old_level.delete()
         # MATEMATIKA_CUSTOM_END
 
         # CUSTOM_LEVEL_NORMALIZATION_END
@@ -2197,7 +2239,7 @@ class Command(BaseCommand):
         # EXACT_20_TESTS_PER_LEVEL_END
 
         # TEST_DURATION_NORMALIZATION_START
-        # Mental arifmetikadan tashqari barcha testlar 40 minut.
+        # Mental arifmetikadan tashqari barcha testlar 30 minut.
         for level in Level.objects.select_related('subject').all():
             if level.subject.name == 'Mental arifmetika':
                 if level.duration_minutes != 5:

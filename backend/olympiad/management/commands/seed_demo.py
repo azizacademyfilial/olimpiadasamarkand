@@ -1036,23 +1036,49 @@ class Command(BaseCommand):
             ('One box – two ___', 'boxs', 'boxes', 'box', 'boxies', 'B')
         ]
 
+        def upsert_question(subject, level, text, a, b, c, d, correct):
+            # get_or_create() crashes if old deployments already created duplicate
+            # questions with the same text. Use filter().first() so seed_demo is
+            # safe to run repeatedly on Railway/PostgreSQL.
+            question = Question.objects.filter(
+                subject=subject,
+                level=level,
+                text=text,
+            ).order_by('id').first()
+
+            if question is None:
+                Question.objects.create(
+                    subject=subject,
+                    level=level,
+                    text=text,
+                    option_a=a,
+                    option_b=b,
+                    option_c=c,
+                    option_d=d,
+                    correct_answer=correct,
+                )
+            else:
+                changed = (
+                    question.option_a != a
+                    or question.option_b != b
+                    or question.option_c != c
+                    or question.option_d != d
+                    or question.correct_answer != correct
+                )
+                if changed:
+                    question.option_a = a
+                    question.option_b = b
+                    question.option_c = c
+                    question.option_d = d
+                    question.correct_answer = correct
+                    question.save(update_fields=['option_a', 'option_b', 'option_c', 'option_d', 'correct_answer'])
+
         for subject_name, levels in demo_data.items():
             subject, _ = Subject.objects.get_or_create(name=subject_name)
             for level_name, questions in levels.items():
                 level, _ = Level.objects.get_or_create(subject=subject, name=level_name, defaults={'duration_minutes': 30})
                 for text, a, b, c, d, correct in questions:
-                    Question.objects.get_or_create(
-                        subject=subject,
-                        level=level,
-                        text=text,
-                        defaults={
-                            'option_a': a,
-                            'option_b': b,
-                            'option_c': c,
-                            'option_d': d,
-                            'correct_answer': correct,
-                        }
-                    )
+                    upsert_question(subject, level, text, a, b, c, d, correct)
 
 
         matematika_subject = Subject.objects.filter(name='Matematika').first()

@@ -9,6 +9,7 @@ from .views import (
     QuestionViewSet,
     ResultViewSet,
     ExamStartAPIView,
+    ExamProgressSaveAPIView,
     ExamSubmitAPIView,
     PublicResultLookupAPIView,
 )
@@ -25,6 +26,7 @@ router.register('results', ResultViewSet, basename='results')
 urlpatterns = [
     path('', include(router.urls)),
     path('exam/start/', ExamStartAPIView.as_view(), name='exam-start'),
+    path('exam/progress/', ExamProgressSaveAPIView.as_view(), name='exam-progress'),
     path('exam/submit/', ExamSubmitAPIView.as_view(), name='exam-submit'),
     path('exam/result/', PublicResultLookupAPIView.as_view(), name='exam-result'),
 ]

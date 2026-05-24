@@ -86,6 +86,10 @@ class Student(models.Model):
     started_at = models.DateTimeField(null=True, blank=True)
     finished_at = models.DateTimeField(null=True, blank=True)
     is_used = models.BooleanField(default=False)
+    progress_answers = models.JSONField(default=dict, blank=True)
+    progress_remaining_seconds = models.PositiveIntegerField(null=True, blank=True)
+    progress_current_index = models.PositiveIntegerField(default=0)
+    progress_updated_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

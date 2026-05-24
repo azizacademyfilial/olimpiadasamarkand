@@ -108,6 +108,9 @@ const mentalTimers = []
 
 let intervalId = null
 let submitted = false
+let progressSaveTimer = null
+let lastServerProgressSave = 0
+let timerTicksSinceServerSave = 0
 
 const isMental = computed(() => payload.value?.mode === 'mental')
 const mentalTasks = computed(() => payload.value?.mental_tasks || [])
@@ -154,17 +157,56 @@ function optionList(q) {
   ]
 }
 
-function examProgressKey() {
-  return payload.value?.code ? `exam_progress_${payload.value.code}` : ''
+function payloadCode() {
+  return payload.value?.code || payload.value?.student?.code || ''
 }
 
-function persistTestProgress() {
+function examProgressKey() {
+  const code = payloadCode()
+  return code ? `exam_progress_${code}` : ''
+}
+
+function buildProgressBody() {
+  return {
+    code: payloadCode(),
+    remaining_seconds: Math.max(0, Number(remainingSeconds.value || 0)),
+    current_index: isMental.value ? Number(currentMentalIndex.value || 0) : 0,
+    answers: isMental.value ? { ...mentalAnswers } : { ...answers },
+  }
+}
+
+async function saveProgressToServer(force = false) {
+  if (!payload.value || submitted || !payloadCode()) return
+  const now = Date.now()
+  if (!force && now - lastServerProgressSave < 2500) return
+  lastServerProgressSave = now
+  try {
+    await api.post('/exam/progress/', buildProgressBody())
+  } catch (_) {}
+}
+
+function scheduleProgressSave() {
+  if (!payload.value || submitted) return
+  if (progressSaveTimer) clearTimeout(progressSaveTimer)
+  progressSaveTimer = setTimeout(() => {
+    progressSaveTimer = null
+    saveProgressToServer(true)
+  }, 400)
+}
+
+function persistTestProgress(sendRemote = true) {
   const key = examProgressKey()
   if (!key) return
-  localStorage.setItem(key, JSON.stringify({ answers: { ...answers } }))
+  localStorage.setItem(key, JSON.stringify({ answers: { ...answers }, remaining_seconds: remainingSeconds.value }))
+  if (sendRemote !== false) scheduleProgressSave()
 }
 
 function loadTestProgress() {
+  const serverAnswers = payload.value?.saved_answers
+  if (serverAnswers && typeof serverAnswers === 'object') {
+    Object.assign(answers, serverAnswers)
+  }
+
   const key = examProgressKey()
   if (!key) return
   try {
@@ -184,6 +226,10 @@ function safeDurationMinutes(defaultMinutes) {
 function remainingFromStartedAt(defaultMinutes) {
   const minutes = safeDurationMinutes(defaultMinutes)
   const durationSeconds = Math.max(1, minutes * 60)
+  const savedRemaining = Number(payload.value?.remaining_seconds)
+  if (Number.isFinite(savedRemaining) && savedRemaining >= 0) {
+    return Math.max(0, Math.min(durationSeconds, Math.floor(savedRemaining)))
+  }
 
   // Backend yangi test boshlanganda resume=false yuboradi.
   // Shunda yangi yaratilgan o‘quvchi 00:00 bo‘lib qolmaydi, 30:00 dan boshlaydi.
@@ -205,25 +251,40 @@ function clearMentalTimers() {
 }
 
 function mentalProgressKey() {
-  return payload.value?.code ? `mental_progress_${payload.value.code}` : ''
+  const code = payloadCode()
+  return code ? `mental_progress_${code}` : ''
 }
 
-function persistMentalProgress() {
+function persistMentalProgress(sendRemote = true) {
   const key = mentalProgressKey()
   if (!key) return
-  localStorage.setItem(key, JSON.stringify({ answers: { ...mentalAnswers } }))
+  localStorage.setItem(key, JSON.stringify({
+    answers: { ...mentalAnswers },
+    remaining_seconds: remainingSeconds.value,
+    current_index: currentMentalIndex.value,
+  }))
+  if (sendRemote !== false) scheduleProgressSave()
 }
 
 function loadMentalProgress() {
+  const serverAnswers = payload.value?.saved_answers
+  if (serverAnswers && typeof serverAnswers === 'object') {
+    Object.assign(mentalAnswers, serverAnswers)
+  }
+
   const key = mentalProgressKey()
-  if (!key) return
   try {
-    const saved = JSON.parse(localStorage.getItem(key) || '{}')
-    if (saved.answers && typeof saved.answers === 'object') {
-      Object.assign(mentalAnswers, saved.answers)
+    if (key) {
+      const saved = JSON.parse(localStorage.getItem(key) || '{}')
+      if (saved.answers && typeof saved.answers === 'object') {
+        Object.assign(mentalAnswers, saved.answers)
+      }
     }
     const firstUnansweredIndex = mentalTasks.value.findIndex(task => mentalAnswers[task.id] === undefined)
-    currentMentalIndex.value = firstUnansweredIndex === -1 ? mentalTasks.value.length : Math.max(0, firstUnansweredIndex)
+    const serverIndex = Number(payload.value?.progress_current_index || 0)
+    currentMentalIndex.value = firstUnansweredIndex === -1
+      ? mentalTasks.value.length
+      : Math.max(0, Math.min(firstUnansweredIndex, Number.isFinite(serverIndex) ? serverIndex : firstUnansweredIndex))
   } catch (_) {
     currentMentalIndex.value = 0
   }
@@ -305,7 +366,7 @@ async function submitMentalExam() {
     }))
 
   try {
-    const res = await api.post('/exam/submit/', { code: payload.value.code, answers: answerList })
+    const res = await api.post('/exam/submit/', { code: payloadCode(), answers: answerList })
     sessionStorage.removeItem('exam_payload')
     localStorage.removeItem(mentalProgressKey())
     localStorage.removeItem(examProgressKey())
@@ -325,7 +386,7 @@ async function submitExam() {
   clearInterval(intervalId)
   const answerList = payload.value.questions.map(q => ({ question_id: q.id, answer: answers[q.id] || '' }))
   try {
-    const res = await api.post('/exam/submit/', { code: payload.value.code, answers: answerList })
+    const res = await api.post('/exam/submit/', { code: payloadCode(), answers: answerList })
     sessionStorage.removeItem('exam_payload')
     localStorage.removeItem(examProgressKey())
     localStorage.removeItem(mentalProgressKey())
@@ -349,8 +410,14 @@ function startTimer() {
     // Vaqt backenddagi started_at bo‘yicha hisoblanadi; bu yerda faqat ekrandagi timer yuradi.
     // Javoblar localStorage’da saqlanadi, code qayta kiritilganda boshidan boshlanmaydi.
     remainingSeconds.value = Math.max(0, remainingSeconds.value - 1)
-    if (isMental.value) persistMentalProgress()
-    else persistTestProgress()
+    if (isMental.value) persistMentalProgress(false)
+    else persistTestProgress(false)
+
+    timerTicksSinceServerSave += 1
+    if (timerTicksSinceServerSave >= 3) {
+      timerTicksSinceServerSave = 0
+      saveProgressToServer(false)
+    }
 
     if (remainingSeconds.value <= 0) {
       remainingSeconds.value = 0
@@ -364,12 +431,23 @@ function startTimer() {
 
 function saveProgressBeforeExit() {
   if (!payload.value || submitted) return
-  if (isMental.value) persistMentalProgress()
-  else persistTestProgress()
+  if (isMental.value) persistMentalProgress(false)
+  else persistTestProgress(false)
+
+  try {
+    const body = JSON.stringify(buildProgressBody())
+    fetch(`${api.defaults.baseURL}/exam/progress/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body,
+      keepalive: true,
+    })
+  } catch (_) {}
 }
 
 onMounted(() => {
   window.addEventListener('beforeunload', saveProgressBeforeExit)
+  window.addEventListener('pagehide', saveProgressBeforeExit)
   const saved = sessionStorage.getItem('exam_payload')
   if (!saved) return
   payload.value = JSON.parse(saved)
@@ -405,7 +483,9 @@ onMounted(() => {
 onBeforeUnmount(() => {
   saveProgressBeforeExit()
   window.removeEventListener('beforeunload', saveProgressBeforeExit)
+  window.removeEventListener('pagehide', saveProgressBeforeExit)
   clearInterval(intervalId)
+  if (progressSaveTimer) clearTimeout(progressSaveTimer)
   clearMentalTimers()
 })
 </script>

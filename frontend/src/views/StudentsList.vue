@@ -45,11 +45,30 @@
       Siz filial adminisiz: o‘quvchilarni ko‘rishingiz mumkin, lekin tahrirlash yoki o‘chirish mumkin emas.
     </div>
 
+    <div v-if="canManageStudents" class="bulk-action-bar">
+      <div>
+        <b>{{ selectedCount }}</b> ta o‘quvchi tanlandi
+        <span v-if="students.length">/ {{ students.length }} ta ko‘rinib turibdi</span>
+      </div>
+      <div class="bulk-action-buttons">
+        <button class="secondary-btn" type="button" :disabled="!students.length" @click="toggleAllVisible">
+          {{ allVisibleSelected ? 'Tanlovni bekor qilish' : 'Hamma ko‘rinib turganlarni belgilash' }}
+        </button>
+        <button class="danger-btn" type="button" :disabled="!selectedCount || bulkDeleting" @click="deleteSelectedStudents">
+          {{ bulkDeleting ? 'O‘chirilmoqda...' : 'Tanlanganlarni o‘chirish' }}
+        </button>
+      </div>
+      <p v-if="bulkDeleteError" class="error-text">{{ bulkDeleteError }}</p>
+    </div>
+
     <div class="panel">
       <div class="table-wrap">
         <table>
           <thead>
             <tr>
+              <th v-if="canManageStudents" class="select-col">
+                <input type="checkbox" :checked="allVisibleSelected" :disabled="!students.length" @change="toggleAllVisible" />
+              </th>
               <th>№</th>
               <th>O‘quvchi</th>
               <th>Fan</th>
@@ -64,6 +83,9 @@
           </thead>
           <tbody>
             <tr v-for="(s, i) in students" :key="s.id">
+              <td v-if="canManageStudents" class="select-col">
+                <input v-model="selectedStudentIds" type="checkbox" :value="s.id" />
+              </td>
               <td>{{ i + 1 }}</td>
               <td><b>{{ s.full_name }}</b></td>
               <td>{{ s.subject_name }}</td>
@@ -99,7 +121,7 @@
               </td>
             </tr>
             <tr v-if="!students.length">
-              <td :colspan="canManageStudents ? 10 : 9" class="empty-cell">O‘quvchi topilmadi</td>
+              <td :colspan="canManageStudents ? 11 : 9" class="empty-cell">O‘quvchi topilmadi</td>
             </tr>
           </tbody>
         </table>
@@ -214,6 +236,9 @@ const deleteModalOpen = ref(false)
 const deletingStudent = ref(null)
 const deleting = ref(false)
 const deleteError = ref('')
+const selectedStudentIds = ref([])
+const bulkDeleting = ref(false)
+const bulkDeleteError = ref('')
 const copiedCode = ref('')
 let copiedTimer = null
 
@@ -222,6 +247,12 @@ const editForm = reactive({ subject: '', level: '', branch: '' })
 
 const mainAdmin = computed(() => isMainAdmin(currentAdmin.value))
 const canManageStudents = computed(() => Boolean(currentAdmin.value?.can_edit_students && currentAdmin.value?.can_delete_students))
+const selectedCount = computed(() => selectedStudentIds.value.length)
+const visibleStudentIds = computed(() => students.value.map(student => student.id))
+const allVisibleSelected = computed(() => {
+  const visibleIds = visibleStudentIds.value
+  return Boolean(visibleIds.length) && visibleIds.every(id => selectedStudentIds.value.includes(id))
+})
 
 const editFilteredLevels = computed(() => {
   const list = levels.value.filter(level => String(level.subject) === String(editForm.subject))
@@ -266,6 +297,7 @@ async function loadStudents() {
   if (filters.branch && mainAdmin.value) params.branch = filters.branch
   const res = await api.get('/students/', { params })
   students.value = res.data
+  selectedStudentIds.value = selectedStudentIds.value.filter(id => students.value.some(student => student.id === id))
 }
 
 async function loadOptions() {
@@ -283,6 +315,34 @@ async function loadCurrentAdmin() {
     if (!mainAdmin.value && currentAdmin.value?.branch) filters.branch = currentAdmin.value.branch
   } catch {
     currentAdmin.value = getStoredAdminProfile()
+  }
+}
+
+function toggleAllVisible() {
+  const visibleIds = visibleStudentIds.value
+  if (!visibleIds.length) return
+  if (allVisibleSelected.value) {
+    selectedStudentIds.value = selectedStudentIds.value.filter(id => !visibleIds.includes(id))
+  } else {
+    selectedStudentIds.value = Array.from(new Set([...selectedStudentIds.value, ...visibleIds]))
+  }
+}
+
+async function deleteSelectedStudents() {
+  if (!selectedStudentIds.value.length) return
+  const ok = window.confirm(`${selectedStudentIds.value.length} ta o‘quvchini o‘chirishni xohlaysizmi? Natijalari va javoblari ham o‘chadi.`)
+  if (!ok) return
+
+  bulkDeleting.value = true
+  bulkDeleteError.value = ''
+  try {
+    await api.post('/students/bulk-delete/', { ids: selectedStudentIds.value })
+    selectedStudentIds.value = []
+    await loadStudents()
+  } catch (e) {
+    bulkDeleteError.value = JSON.stringify(e.response?.data || 'Tanlangan o‘quvchilarni o‘chirishda xatolik.')
+  } finally {
+    bulkDeleting.value = false
   }
 }
 
@@ -353,6 +413,7 @@ async function deleteStudent() {
   try {
     await api.delete(`/students/${deletingStudent.value.id}/`)
     students.value = students.value.filter(student => student.id !== deletingStudent.value.id)
+    selectedStudentIds.value = selectedStudentIds.value.filter(id => id !== deletingStudent.value.id)
     closeDeleteModal()
   } catch (e) {
     deleteError.value = JSON.stringify(e.response?.data || 'O‘chirishda xatolik yuz berdi.')

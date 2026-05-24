@@ -56,9 +56,13 @@ class StudentSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'first_name', 'last_name', 'full_name', 'subject', 'subject_name',
             'level', 'level_name', 'center', 'center_name', 'branch', 'branch_display', 'code', 'status',
-            'started_at', 'finished_at', 'is_used', 'created_at', 'correct_count', 'total_questions', 'percent'
+            'started_at', 'finished_at', 'is_used', 'progress_remaining_seconds', 'progress_current_index',
+            'progress_updated_at', 'created_at', 'correct_count', 'total_questions', 'percent'
         ]
-        read_only_fields = ['code', 'status', 'started_at', 'finished_at', 'is_used', 'created_at']
+        read_only_fields = [
+            'code', 'status', 'started_at', 'finished_at', 'is_used', 'progress_remaining_seconds',
+            'progress_current_index', 'progress_updated_at', 'created_at'
+        ]
 
     def get_branch_display(self, obj):
         return obj.branch

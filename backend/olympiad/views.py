@@ -28,6 +28,52 @@ def get_exam_duration_minutes(student):
     return 30
 
 
+def get_exam_duration_seconds(student):
+    return max(1, int(get_exam_duration_minutes(student) * 60))
+
+
+def normalize_progress_answers(raw_answers, is_mental=False):
+    """Clean progress answers before saving them on the student row.
+
+    Normal tests are saved as {question_id: 'A'}. Mental answers are saved as
+    {task_id: '123'} so they can be restored even from another browser/device.
+    """
+    if not isinstance(raw_answers, dict):
+        return {}
+
+    cleaned = {}
+    for key, value in raw_answers.items():
+        key_text = str(key or '').strip()
+        if not key_text:
+            continue
+
+        if is_mental:
+            answer_text = str(value if value is not None else '').strip()
+            if answer_text:
+                cleaned[key_text] = answer_text[:30]
+        else:
+            answer_text = str(value if value is not None else '').strip().upper()
+            if answer_text in ['A', 'B', 'C', 'D']:
+                cleaned[key_text] = answer_text
+    return cleaned
+
+
+def get_resume_remaining_seconds(student):
+    duration_seconds = get_exam_duration_seconds(student)
+    saved_remaining = student.progress_remaining_seconds
+    if saved_remaining is not None:
+        try:
+            return max(0, min(duration_seconds, int(saved_remaining)))
+        except (TypeError, ValueError):
+            pass
+
+    if student.started_at:
+        elapsed = int((timezone.now() - student.started_at).total_seconds())
+        return max(0, duration_seconds - max(0, elapsed))
+
+    return duration_seconds
+
+
 MENTAL_ARITHMETIC_SEQUENCES = [
     [22, -11, -11, 55, 44],
     [33, 66, -99, 77, 11],
@@ -375,6 +421,10 @@ class StudentViewSet(viewsets.ModelViewSet):
             'started_at': None,
             'finished_at': None,
             'is_used': False,
+            'progress_answers': {},
+            'progress_remaining_seconds': None,
+            'progress_current_index': 0,
+            'progress_updated_at': None,
         }
         if not is_main_admin(self.request.user) and user_center:
             save_kwargs['center'] = user_center
@@ -394,6 +444,30 @@ class StudentViewSet(viewsets.ModelViewSet):
         if not can_manage_students(request.user):
             return Response({'detail': 'Sizga o‘quvchini o‘chirishga ruxsat yo‘q.'}, status=status.HTTP_403_FORBIDDEN)
         return super().destroy(request, *args, **kwargs)
+
+    @action(detail=False, methods=['post'], url_path='bulk-delete')
+    def bulk_delete(self, request):
+        if not can_manage_students(request.user):
+            return Response({'detail': 'Sizga o‘quvchilarni o‘chirishga ruxsat yo‘q.'}, status=status.HTTP_403_FORBIDDEN)
+
+        raw_ids = request.data.get('ids', [])
+        if not isinstance(raw_ids, list):
+            return Response({'detail': 'ids ro‘yxat bo‘lishi kerak.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        ids = []
+        for item in raw_ids:
+            try:
+                ids.append(int(item))
+            except (TypeError, ValueError):
+                continue
+
+        if not ids:
+            return Response({'detail': 'O‘chirish uchun o‘quvchi tanlanmadi.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        qs = self.get_queryset().filter(id__in=ids)
+        deleted_count = qs.count()
+        qs.delete()
+        return Response({'deleted_count': deleted_count})
 
     @action(detail=False, methods=['post'], url_path='import-excel')
     def import_excel(self, request):
@@ -517,6 +591,10 @@ class StudentViewSet(viewsets.ModelViewSet):
                     started_at=None,
                     finished_at=None,
                     is_used=False,
+                    progress_answers={},
+                    progress_remaining_seconds=None,
+                    progress_current_index=0,
+                    progress_updated_at=None,
                 )
                 created.append(student)
 
@@ -839,6 +917,7 @@ class ExamStartAPIView(APIView):
 
         is_mental_exam = is_mental_subject(student.subject.name)
         duration_minutes = get_exam_duration_minutes(student)
+        duration_seconds = get_exam_duration_seconds(student)
 
         def build_mental_payload(started_at, resume=False):
             mental_tasks = generate_mental_tasks(student)
@@ -846,9 +925,12 @@ class ExamStartAPIView(APIView):
                 'mode': 'mental',
                 'student': StudentSerializer(student).data,
                 'duration_minutes': 5,
+                'remaining_seconds': get_resume_remaining_seconds(student),
                 'started_at': started_at.isoformat(),
                 'server_now': timezone.now().isoformat(),
                 'resume': bool(resume),
+                'saved_answers': student.progress_answers or {},
+                'progress_current_index': student.progress_current_index or 0,
                 'mental_tasks': [
                     {
                         'id': task.id,
@@ -868,9 +950,12 @@ class ExamStartAPIView(APIView):
                 'mode': 'test',
                 'student': StudentSerializer(student).data,
                 'duration_minutes': 30,
+                'remaining_seconds': get_resume_remaining_seconds(student),
                 'started_at': started_at.isoformat(),
                 'server_now': timezone.now().isoformat(),
                 'resume': bool(resume),
+                'saved_answers': student.progress_answers or {},
+                'progress_current_index': student.progress_current_index or 0,
                 'questions': QuestionForExamSerializer(questions, many=True).data,
             }
 
@@ -902,7 +987,14 @@ class ExamStartAPIView(APIView):
         student.started_at = now
         student.finished_at = None
         student.is_used = False
-        student.save(update_fields=['status', 'started_at', 'finished_at', 'is_used'])
+        student.progress_answers = {}
+        student.progress_remaining_seconds = duration_seconds
+        student.progress_current_index = 0
+        student.progress_updated_at = timezone.now()
+        student.save(update_fields=[
+            'status', 'started_at', 'finished_at', 'is_used', 'progress_answers',
+            'progress_remaining_seconds', 'progress_current_index', 'progress_updated_at'
+        ])
 
         if is_mental_exam:
             return Response(build_mental_payload(now, resume=False))
@@ -911,10 +1003,69 @@ class ExamStartAPIView(APIView):
         if payload is None:
             student.status = Student.Status.NOT_STARTED
             student.started_at = None
-            student.save(update_fields=['status', 'started_at'])
+            student.progress_answers = {}
+            student.progress_remaining_seconds = None
+            student.progress_current_index = 0
+            student.progress_updated_at = None
+            student.save(update_fields=[
+                'status', 'started_at', 'progress_answers', 'progress_remaining_seconds',
+                'progress_current_index', 'progress_updated_at'
+            ])
             return Response({'detail': 'Bu fan va daraja uchun testlar hali qo‘shilmagan.'}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response(payload)
+
+
+class ExamProgressSaveAPIView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    @transaction.atomic
+    def post(self, request):
+        code = str(request.data.get('code', '')).strip()
+        if not code:
+            return Response({'detail': 'Status code yuborilmadi.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            student = Student.objects.select_related('subject', 'level', 'center').select_for_update().get(code=code)
+        except Student.DoesNotExist:
+            return Response({'detail': 'Bunday code topilmadi.'}, status=status.HTTP_404_NOT_FOUND)
+
+        if student.status == Student.Status.COMPLETED or student.is_used:
+            return Response({'detail': 'Bu test allaqachon yakunlangan.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if student.status != Student.Status.IN_PROGRESS:
+            return Response({'detail': 'Avval testni boshlash kerak.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        is_mental_exam = is_mental_subject(student.subject.name)
+        duration_seconds = get_exam_duration_seconds(student)
+        answers = normalize_progress_answers(request.data.get('answers', {}), is_mental=is_mental_exam)
+
+        try:
+            remaining_seconds = int(request.data.get('remaining_seconds', duration_seconds))
+        except (TypeError, ValueError):
+            remaining_seconds = get_resume_remaining_seconds(student)
+        remaining_seconds = max(0, min(duration_seconds, remaining_seconds))
+
+        try:
+            current_index = int(request.data.get('current_index', 0))
+        except (TypeError, ValueError):
+            current_index = 0
+        current_index = max(0, current_index)
+
+        student.progress_answers = answers
+        student.progress_remaining_seconds = remaining_seconds
+        student.progress_current_index = current_index
+        student.progress_updated_at = timezone.now()
+        student.save(update_fields=[
+            'progress_answers', 'progress_remaining_seconds', 'progress_current_index', 'progress_updated_at'
+        ])
+
+        return Response({
+            'status': 'ok',
+            'remaining_seconds': student.progress_remaining_seconds,
+            'saved_answers': student.progress_answers,
+            'progress_current_index': student.progress_current_index,
+        })
 
 
 class ExamSubmitAPIView(APIView):
@@ -970,7 +1121,14 @@ class ExamSubmitAPIView(APIView):
         student.status = Student.Status.COMPLETED
         student.finished_at = finished_at
         student.is_used = True
-        student.save(update_fields=['status', 'finished_at', 'is_used'])
+        student.progress_answers = {}
+        student.progress_remaining_seconds = 0
+        student.progress_current_index = 0
+        student.progress_updated_at = timezone.now()
+        student.save(update_fields=[
+            'status', 'finished_at', 'is_used', 'progress_answers', 'progress_remaining_seconds',
+            'progress_current_index', 'progress_updated_at'
+        ])
 
         return Response(ResultSerializer(result).data, status=status.HTTP_201_CREATED)
 
@@ -1044,6 +1202,13 @@ class ExamSubmitAPIView(APIView):
         student.status = Student.Status.COMPLETED
         student.finished_at = finished_at
         student.is_used = True
-        student.save(update_fields=['status', 'finished_at', 'is_used'])
+        student.progress_answers = {}
+        student.progress_remaining_seconds = 0
+        student.progress_current_index = 0
+        student.progress_updated_at = timezone.now()
+        student.save(update_fields=[
+            'status', 'finished_at', 'is_used', 'progress_answers', 'progress_remaining_seconds',
+            'progress_current_index', 'progress_updated_at'
+        ])
 
         return Response(ResultSerializer(result).data, status=status.HTTP_201_CREATED)

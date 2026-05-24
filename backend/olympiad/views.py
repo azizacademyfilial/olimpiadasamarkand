@@ -369,10 +369,16 @@ class StudentViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         user_center = get_user_center(self.request.user)
         branch = normalize_branch(serializer.validated_data.get('branch')) or get_user_branch(self.request.user) or 'Boshqa'
+        save_kwargs = {
+            'branch': branch,
+            'status': Student.Status.NOT_STARTED,
+            'started_at': None,
+            'finished_at': None,
+            'is_used': False,
+        }
         if not is_main_admin(self.request.user) and user_center:
-            serializer.save(center=user_center, branch=branch)
-        else:
-            serializer.save(branch=branch)
+            save_kwargs['center'] = user_center
+        serializer.save(**save_kwargs)
 
     def update(self, request, *args, **kwargs):
         if not can_manage_students(request.user):
@@ -507,6 +513,10 @@ class StudentViewSet(viewsets.ModelViewSet):
                     level=level,
                     center=center,
                     branch=branch_name,
+                    status=Student.Status.NOT_STARTED,
+                    started_at=None,
+                    finished_at=None,
+                    is_used=False,
                 )
                 created.append(student)
 
@@ -828,55 +838,17 @@ class ExamStartAPIView(APIView):
             return Response({'detail': 'Bu code oldin ishlatilgan.'}, status=status.HTTP_400_BAD_REQUEST)
 
         is_mental_exam = is_mental_subject(student.subject.name)
+        duration_minutes = get_exam_duration_minutes(student)
 
-        # Agar o‘quvchi testni boshlab, adashib chiqib ketgan bo‘lsa,
-        # code qayta kiritilganda bloklamaymiz. Test yakunlanmagan bo‘lsa,
-        # aynan o‘sha started_at bilan davom ettiramiz.
-        if student.status == Student.Status.IN_PROGRESS:
-            started_at = student.started_at or timezone.now()
-
-            if is_mental_exam:
-                mental_tasks = generate_mental_tasks(student)
-                return Response({
-                    'mode': 'mental',
-                    'student': StudentSerializer(student).data,
-                    'duration_minutes': get_exam_duration_minutes(student),
-                    'started_at': started_at,
-                    'mental_tasks': [
-                        {
-                            'id': task.id,
-                            'task_order': task.task_order,
-                            'flashes': task.flashes,
-                            'task_display_ms': 3000,
-                        }
-                        for task in mental_tasks
-                    ],
-                })
-
-            questions = Question.objects.filter(subject=student.subject, level=student.level).order_by('id')
-            if not questions.exists():
-                return Response({'detail': 'Bu fan va daraja uchun testlar hali qo‘shilmagan.'}, status=status.HTTP_400_BAD_REQUEST)
-
-            return Response({
-                'mode': 'test',
-                'student': StudentSerializer(student).data,
-                'duration_minutes': get_exam_duration_minutes(student),
-                'started_at': started_at,
-                'questions': QuestionForExamSerializer(questions, many=True).data,
-            })
-
-        now = timezone.now()
-        student.status = Student.Status.IN_PROGRESS
-        student.started_at = now
-        student.save(update_fields=['status', 'started_at'])
-
-        if is_mental_exam:
+        def build_mental_payload(started_at, resume=False):
             mental_tasks = generate_mental_tasks(student)
-            return Response({
+            return {
                 'mode': 'mental',
                 'student': StudentSerializer(student).data,
-                'duration_minutes': get_exam_duration_minutes(student),
-                'started_at': now,
+                'duration_minutes': 5,
+                'started_at': started_at.isoformat(),
+                'server_now': timezone.now().isoformat(),
+                'resume': bool(resume),
                 'mental_tasks': [
                     {
                         'id': task.id,
@@ -886,22 +858,63 @@ class ExamStartAPIView(APIView):
                     }
                     for task in mental_tasks
                 ],
-            })
+            }
 
-        questions = Question.objects.filter(subject=student.subject, level=student.level).order_by('id')
-        if not questions.exists():
+        def build_test_payload(started_at, resume=False):
+            questions = Question.objects.filter(subject=student.subject, level=student.level).order_by('id')
+            if not questions.exists():
+                return None
+            return {
+                'mode': 'test',
+                'student': StudentSerializer(student).data,
+                'duration_minutes': 30,
+                'started_at': started_at.isoformat(),
+                'server_now': timezone.now().isoformat(),
+                'resume': bool(resume),
+                'questions': QuestionForExamSerializer(questions, many=True).data,
+            }
+
+        # Agar o‘quvchi testni boshlab, adashib chiqib ketgan bo‘lsa,
+        # code qayta kiritilganda bloklamaymiz. Test yakunlanmagan bo‘lsa,
+        # aynan o‘sha started_at bilan davom ettiramiz.
+        if student.status == Student.Status.IN_PROGRESS:
+            started_at = student.started_at
+            resume = True
+            if not started_at:
+                # Eski bazada started_at bo'sh qolgan bo'lsa, 00:00 bo'lib qolmasin.
+                started_at = timezone.now()
+                resume = False
+                student.started_at = started_at
+                student.save(update_fields=['started_at'])
+
+            if is_mental_exam:
+                return Response(build_mental_payload(started_at, resume=resume))
+
+            payload = build_test_payload(started_at, resume=resume)
+            if payload is None:
+                return Response({'detail': 'Bu fan va daraja uchun testlar hali qo‘shilmagan.'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(payload)
+
+        # Yangi o‘quvchi code bilan birinchi marta kirganda vaqt aynan hozirdan boshlanadi.
+        # Frontend resume=False ni ko‘rib 30:00 dan boshlaydi, 00:00 qilib yubormaydi.
+        now = timezone.now()
+        student.status = Student.Status.IN_PROGRESS
+        student.started_at = now
+        student.finished_at = None
+        student.is_used = False
+        student.save(update_fields=['status', 'started_at', 'finished_at', 'is_used'])
+
+        if is_mental_exam:
+            return Response(build_mental_payload(now, resume=False))
+
+        payload = build_test_payload(now, resume=False)
+        if payload is None:
             student.status = Student.Status.NOT_STARTED
             student.started_at = None
             student.save(update_fields=['status', 'started_at'])
             return Response({'detail': 'Bu fan va daraja uchun testlar hali qo‘shilmagan.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        return Response({
-            'mode': 'test',
-            'student': StudentSerializer(student).data,
-            'duration_minutes': get_exam_duration_minutes(student),
-            'started_at': now,
-            'questions': QuestionForExamSerializer(questions, many=True).data,
-        })
+        return Response(payload)
 
 
 class ExamSubmitAPIView(APIView):

@@ -175,10 +175,23 @@ function loadTestProgress() {
   } catch (_) {}
 }
 
-function remainingFromStartedAt(defaultMinutes) {
-  const durationSeconds = Math.max(1, Number(defaultMinutes || 30) * 60)
-  const startedAt = Date.parse(payload.value?.started_at || '')
+function safeDurationMinutes(defaultMinutes) {
+  if (isMental.value) return 5
+  const value = Number(defaultMinutes)
+  return Number.isFinite(value) && value > 0 ? value : 30
+}
 
+function remainingFromStartedAt(defaultMinutes) {
+  const minutes = safeDurationMinutes(defaultMinutes)
+  const durationSeconds = Math.max(1, minutes * 60)
+
+  // Backend yangi test boshlanganda resume=false yuboradi.
+  // Shunda yangi yaratilgan o‘quvchi 00:00 bo‘lib qolmaydi, 30:00 dan boshlaydi.
+  if (payload.value?.resume === false) {
+    return durationSeconds
+  }
+
+  const startedAt = Date.parse(payload.value?.started_at || '')
   if (!Number.isFinite(startedAt)) {
     return durationSeconds
   }
@@ -364,7 +377,7 @@ onMounted(() => {
   if (isMental.value) {
     // Mentalda code qayta kiritilganda vaqt yangidan boshlanmaydi.
     // Backend bergan started_at bo‘yicha qolgan vaqt hisoblanadi.
-    const durationMinutes = Number(payload.value.duration_minutes || 5)
+    const durationMinutes = safeDurationMinutes(payload.value.duration_minutes || 5)
     remainingSeconds.value = remainingFromStartedAt(durationMinutes)
 
     loadMentalProgress()
@@ -378,7 +391,7 @@ onMounted(() => {
   }
 
   // Oddiy testda 30 minut vaqt beriladi. Code qayta kiritilganda avvalgi javoblar va qolgan vaqt saqlanadi.
-  const durationMinutes = Number(payload.value.duration_minutes || 30)
+  const durationMinutes = safeDurationMinutes(payload.value.duration_minutes || 30)
   remainingSeconds.value = remainingFromStartedAt(durationMinutes)
   loadTestProgress()
 

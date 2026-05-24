@@ -25,7 +25,7 @@ def is_mental_subject(subject_name):
 def get_exam_duration_minutes(student):
     if is_mental_subject(student.subject.name):
         return 5
-    return 40
+    return 30
 
 
 MENTAL_ARITHMETIC_SEQUENCES = [
@@ -496,7 +496,7 @@ class StudentViewSet(viewsets.ModelViewSet):
                     continue
 
                 subject, _ = Subject.objects.get_or_create(name=subject_name)
-                level, _ = Level.objects.get_or_create(subject=subject, name=level_name, defaults={'duration_minutes': 40})
+                level, _ = Level.objects.get_or_create(subject=subject, name=level_name, defaults={'duration_minutes': 30})
                 if center is None:
                     center, _ = Center.objects.get_or_create(name=center_name)
 

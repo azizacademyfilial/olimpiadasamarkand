@@ -1039,7 +1039,7 @@ class Command(BaseCommand):
         for subject_name, levels in demo_data.items():
             subject, _ = Subject.objects.get_or_create(name=subject_name)
             for level_name, questions in levels.items():
-                level, _ = Level.objects.get_or_create(subject=subject, name=level_name, defaults={'duration_minutes': 40})
+                level, _ = Level.objects.get_or_create(subject=subject, name=level_name, defaults={'duration_minutes': 30})
                 for text, a, b, c, d, correct in questions:
                     Question.objects.get_or_create(
                         subject=subject,
@@ -1280,7 +1280,7 @@ class Command(BaseCommand):
         for subject_name, levels in math_data.items():
             subject, _ = Subject.objects.get_or_create(name=subject_name)
             for level_name, questions in levels.items():
-                level, _ = Level.objects.get_or_create(subject=subject, name=level_name, defaults={'duration_minutes': 40})
+                level, _ = Level.objects.get_or_create(subject=subject, name=level_name, defaults={'duration_minutes': 30})
                 # Matematika testlarini qayta seed qilganda eski savollar dublikat bo‘lmasin.
                 Question.objects.filter(subject=subject, level=level).delete()
                 for text, a, b, c, d, correct in questions:
@@ -1299,7 +1299,7 @@ class Command(BaseCommand):
         for subject_name, levels in extra_subject_tests.items():
             subject, _ = Subject.objects.get_or_create(name=subject_name)
             for level_name, questions in levels.items():
-                level, _ = Level.objects.get_or_create(subject=subject, name=level_name, defaults={'duration_minutes': 40})
+                level, _ = Level.objects.get_or_create(subject=subject, name=level_name, defaults={'duration_minutes': 30})
                 if level.duration_minutes != 30:
                     level.duration_minutes = 30
                     level.save(update_fields=['duration_minutes'])
@@ -1331,13 +1331,13 @@ class Command(BaseCommand):
                     level.duration_minutes = 5
                     level.save(update_fields=['duration_minutes'])
             else:
-                if level.duration_minutes != 40:
-                    level.duration_minutes = 40
+                if level.duration_minutes != 30:
+                    level.duration_minutes = 30
                     level.save(update_fields=['duration_minutes'])
 
         center, _ = Center.objects.get_or_create(name='Al-Aziz Academy')
         # CUSTOM_LEVEL_NORMALIZATION_START
-        def reset_single_level(subject_name, level_name, questions, duration_minutes=40, old_level_names=None):
+        def reset_single_level(subject_name, level_name, questions, duration_minutes=30, old_level_names=None):
             old_level_names = old_level_names or []
             subject, _ = Subject.objects.get_or_create(name=subject_name)
 
@@ -1829,7 +1829,7 @@ class Command(BaseCommand):
         reset_single_level('IT', 'Backend 1', it_backend_1_questions)
         it_subject, _ = Subject.objects.get_or_create(name='IT')
         for it_level_name in ['Frontend 1', 'Frontend 2', 'Backend 1', 'Backend 2']:
-            Level.objects.get_or_create(subject=it_subject, name=it_level_name, defaults={'duration_minutes': 40})
+            Level.objects.get_or_create(subject=it_subject, name=it_level_name, defaults={'duration_minutes': 30})
         # IT_LEVELS_END
 
 
@@ -2204,8 +2204,8 @@ class Command(BaseCommand):
                     level.duration_minutes = 5
                     level.save(update_fields=['duration_minutes'])
             else:
-                if level.duration_minutes != 40:
-                    level.duration_minutes = 40
+                if level.duration_minutes != 30:
+                    level.duration_minutes = 30
                     level.save(update_fields=['duration_minutes'])
         # TEST_DURATION_NORMALIZATION_END
 

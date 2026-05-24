@@ -4,10 +4,6 @@
     <div class="entry-orb entry-orb-two"></div>
     <div class="entry-orb entry-orb-three"></div>
 
-    <button type="button" class="public-result-top-btn" @click="openResultModal">
-      Natijalar ko‘rish
-    </button>
-
     <section class="world-hero-shell">
       <div class="world-hero-copy">
         <div class="world-brand-line no-mark">

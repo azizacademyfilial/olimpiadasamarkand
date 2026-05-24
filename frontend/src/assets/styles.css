@@ -1942,3 +1942,32 @@ body {
     min-width: 300px;
   }
 }
+
+
+/* Mobile public entry order update: test card first, content below */
+@media (max-width: 920px) {
+  .world-hero-shell {
+    align-items: stretch;
+  }
+  .world-login-card {
+    order: 1;
+  }
+  .world-hero-copy {
+    order: 2;
+  }
+}
+
+@media (max-width: 640px) {
+  .world-entry {
+    padding-top: 28px;
+  }
+  .world-hero-shell {
+    gap: 22px;
+  }
+  .world-login-card {
+    width: 100%;
+  }
+  .world-hero-copy {
+    gap: 16px;
+  }
+}

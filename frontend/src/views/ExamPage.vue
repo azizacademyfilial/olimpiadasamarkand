@@ -176,7 +176,7 @@ function loadTestProgress() {
 }
 
 function remainingFromStartedAt(defaultMinutes) {
-  const durationSeconds = Math.max(1, Number(defaultMinutes || 40) * 60)
+  const durationSeconds = Math.max(1, Number(defaultMinutes || 30) * 60)
   const startedAt = Date.parse(payload.value?.started_at || '')
 
   if (!Number.isFinite(startedAt)) {
@@ -333,7 +333,11 @@ function startTimer() {
       return
     }
 
+    // Vaqt backenddagi started_at bo‘yicha hisoblanadi; bu yerda faqat ekrandagi timer yuradi.
+    // Javoblar localStorage’da saqlanadi, code qayta kiritilganda boshidan boshlanmaydi.
     remainingSeconds.value = Math.max(0, remainingSeconds.value - 1)
+    if (isMental.value) persistMentalProgress()
+    else persistTestProgress()
 
     if (remainingSeconds.value <= 0) {
       remainingSeconds.value = 0
@@ -345,7 +349,14 @@ function startTimer() {
   }, 1000)
 }
 
+function saveProgressBeforeExit() {
+  if (!payload.value || submitted) return
+  if (isMental.value) persistMentalProgress()
+  else persistTestProgress()
+}
+
 onMounted(() => {
+  window.addEventListener('beforeunload', saveProgressBeforeExit)
   const saved = sessionStorage.getItem('exam_payload')
   if (!saved) return
   payload.value = JSON.parse(saved)
@@ -366,8 +377,8 @@ onMounted(() => {
     return
   }
 
-  // Oddiy testda ham code qayta kiritilganda avvalgi javoblar va qolgan vaqt saqlanadi.
-  const durationMinutes = Number(payload.value.duration_minutes || 40)
+  // Oddiy testda 30 minut vaqt beriladi. Code qayta kiritilganda avvalgi javoblar va qolgan vaqt saqlanadi.
+  const durationMinutes = Number(payload.value.duration_minutes || 30)
   remainingSeconds.value = remainingFromStartedAt(durationMinutes)
   loadTestProgress()
 
@@ -379,6 +390,8 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  saveProgressBeforeExit()
+  window.removeEventListener('beforeunload', saveProgressBeforeExit)
   clearInterval(intervalId)
   clearMentalTimers()
 })

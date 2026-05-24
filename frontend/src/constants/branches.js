@@ -1,0 +1,18 @@
+export const BRANCHES = [
+  'Niyozbosh',
+  'Xalqabod',
+  'Gulbahor',
+  'Kasblar',
+  'Kids1',
+  'Kids2',
+  'Do’stobod',
+  'Olmazor',
+  'Chinoz',
+  'Krasin',
+  'Pitiletka',
+  'Qo’rg’oncha',
+  'Kids 3',
+  'Oqqo’rg’on',
+  'Alimkent',
+  'Boshqa',
+]

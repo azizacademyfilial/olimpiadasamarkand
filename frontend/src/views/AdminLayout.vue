@@ -4,7 +4,7 @@
       <div class="sidebar-brand">
         <div class="brand-circle small brand-icon-only">🏆</div>
         <div>
-          <h2>Al-Aziz Academy</h2>
+          <h2>AZIZ ACADEMY PLATFORM</h2>
           <span>{{ adminTitle }}</span>
         </div>
       </div>

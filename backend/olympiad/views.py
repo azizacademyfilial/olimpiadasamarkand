@@ -74,6 +74,30 @@ def get_resume_remaining_seconds(student):
     return duration_seconds
 
 
+def calculate_spent_seconds(student, finished_at, submitted_remaining_seconds=None):
+    """Return real working time shown in admin.
+
+    If the student leaves the page and later enters the same code again, the
+    frontend/server preserve remaining_seconds. So admin time should be based
+    on the preserved timer, not just wall-clock time between started/finished.
+    """
+    duration_seconds = get_exam_duration_seconds(student)
+    remaining = submitted_remaining_seconds
+
+    if remaining is None:
+        remaining = student.progress_remaining_seconds
+
+    try:
+        remaining = int(remaining)
+        remaining = max(0, min(duration_seconds, remaining))
+        return max(0, duration_seconds - remaining)
+    except (TypeError, ValueError):
+        pass
+
+    started_at = student.started_at or finished_at
+    return max(0, min(duration_seconds, int((finished_at - started_at).total_seconds())))
+
+
 MENTAL_ARITHMETIC_SEQUENCES = [
     [22, -11, -11, 55, 44],
     [33, 66, -99, 77, 11],
@@ -612,7 +636,7 @@ class StudentViewSet(viewsets.ModelViewSet):
         ws = wb.active
         ws.title = 'Barcha oquvchilar'
 
-        headers = ['№', 'Ism familyasi', 'Fani', 'Darajasi', "O'quv markazi", 'Filial', 'Code', 'Status', 'Natijasi']
+        headers = ['№', 'Ism familyasi', 'Fani', 'Darajasi', "O'quv markazi", 'Filial', 'Code', 'Status', 'Natijasi', 'Sarflagan vaqt']
         ws.append(headers)
 
         header_fill = PatternFill('solid', fgColor='1F4E79')
@@ -634,8 +658,10 @@ class StudentViewSet(viewsets.ModelViewSet):
                 result = None
 
             natija = '—'
+            spent_time = '—'
             if result:
                 natija = f'{result.correct_count}/{result.total_questions} ta / {result.percent:.1f}%'
+                spent_time = str(timedelta(seconds=result.spent_seconds))
 
             ws.append([
                 idx,
@@ -647,6 +673,7 @@ class StudentViewSet(viewsets.ModelViewSet):
                 student.code,
                 status_labels.get(student.status, student.status),
                 natija,
+                spent_time,
             ])
 
         ws.freeze_panes = 'A2'
@@ -1071,7 +1098,7 @@ class ExamProgressSaveAPIView(APIView):
 class ExamSubmitAPIView(APIView):
     permission_classes = [permissions.AllowAny]
 
-    def submit_mental(self, student, answers):
+    def submit_mental(self, student, answers, remaining_seconds=None):
         task_ids = [item.get('task_id') for item in answers if isinstance(item, dict)]
         tasks = list(MentalTask.objects.select_for_update().filter(student=student, id__in=task_ids).order_by('task_order'))
 
@@ -1090,7 +1117,7 @@ class ExamSubmitAPIView(APIView):
 
         finished_at = timezone.now()
         started_at = student.started_at or finished_at
-        spent_seconds = max(0, int((finished_at - started_at).total_seconds()))
+        spent_seconds = calculate_spent_seconds(student, finished_at, remaining_seconds)
 
         result = Result.objects.create(
             student=student,
@@ -1151,8 +1178,14 @@ class ExamSubmitAPIView(APIView):
         if student.status != Student.Status.IN_PROGRESS:
             return Response({'detail': 'Avval testni boshlash kerak.'}, status=status.HTTP_400_BAD_REQUEST)
 
+        submitted_remaining_seconds = request.data.get('remaining_seconds', None)
+        try:
+            submitted_remaining_seconds = int(submitted_remaining_seconds)
+        except (TypeError, ValueError):
+            submitted_remaining_seconds = None
+
         if is_mental_subject(student.subject.name):
-            return self.submit_mental(student, answers)
+            return self.submit_mental(student, answers, submitted_remaining_seconds)
 
         answer_map = {}
         for item in answers:
@@ -1168,7 +1201,7 @@ class ExamSubmitAPIView(APIView):
         correct_count = 0
         finished_at = timezone.now()
         started_at = student.started_at or finished_at
-        spent_seconds = max(0, int((finished_at - started_at).total_seconds()))
+        spent_seconds = calculate_spent_seconds(student, finished_at, submitted_remaining_seconds)
 
         result = Result.objects.create(
             student=student,

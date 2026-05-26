@@ -22,7 +22,7 @@
       <div class="table-wrap">
         <table>
           <thead>
-            <tr><th>O‘quvchi</th><th>Fan</th><th>Daraja</th><th>To‘g‘ri</th><th>Foiz</th></tr>
+            <tr><th>O‘quvchi</th><th>Fan</th><th>Daraja</th><th>To‘g‘ri</th><th>Foiz</th><th>Vaqt</th></tr>
           </thead>
           <tbody>
             <tr v-for="r in results.slice(0, 8)" :key="r.id">
@@ -31,6 +31,7 @@
               <td>{{ r.level_name }}</td>
               <td>{{ r.correct_count }}/{{ r.total_questions }}</td>
               <td>{{ r.percent }}%</td>
+              <td>{{ formatSeconds(r.spent_seconds) }}</td>
             </tr>
           </tbody>
         </table>
@@ -45,6 +46,14 @@ import api from '../api/axios'
 
 const students = ref([])
 const results = ref([])
+
+
+function formatSeconds(seconds) {
+  const total = Number(seconds || 0)
+  const min = Math.floor(total / 60)
+  const sec = total % 60
+  return `${min} daq ${sec} sek`
+}
 
 function countByStatus(status) {
   return students.value.filter(s => s.status === status).length

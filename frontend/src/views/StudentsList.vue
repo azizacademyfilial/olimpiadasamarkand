@@ -78,6 +78,7 @@
               <th>Code</th>
               <th>Status</th>
               <th>Natija</th>
+              <th>Sarflagan vaqt</th>
               <th v-if="canManageStudents">Amal</th>
             </tr>
           </thead>
@@ -109,6 +110,7 @@
                 </span>
                 <span v-else>—</span>
               </td>
+              <td>{{ s.spent_seconds !== null && s.spent_seconds !== undefined ? formatSeconds(s.spent_seconds) : '—' }}</td>
               <td v-if="canManageStudents">
                 <div class="student-row-actions">
                   <button class="secondary-btn small-action-btn" @click="openEditModal(s)">
@@ -121,7 +123,7 @@
               </td>
             </tr>
             <tr v-if="!students.length">
-              <td :colspan="canManageStudents ? 11 : 9" class="empty-cell">O‘quvchi topilmadi</td>
+              <td :colspan="canManageStudents ? 12 : 10" class="empty-cell">O‘quvchi topilmadi</td>
             </tr>
           </tbody>
         </table>
@@ -271,6 +273,14 @@ const editFilteredLevels = computed(() => {
   return list
 })
 
+
+
+function formatSeconds(seconds) {
+  const total = Number(seconds || 0)
+  const min = Math.floor(total / 60)
+  const sec = total % 60
+  return `${min} daq ${sec} sek`
+}
 
 async function createBranch() {
   branchMessage.value = ''

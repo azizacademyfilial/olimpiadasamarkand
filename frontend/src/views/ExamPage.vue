@@ -62,11 +62,6 @@
         <div class="finish-icon">{{ finishModal.type === 'success' ? '✓' : '!' }}</div>
         <h2>{{ finishModal.title }}</h2>
         <p>{{ finishModal.message }}</p>
-        <div v-if="finishModal.result" class="student-result-box">
-          <span>Sizning natijangiz</span>
-          <strong>{{ finishModal.result.correct_count }}/{{ finishModal.result.total_questions }}</strong>
-          <small>{{ finishModal.result.percent }}% to‘g‘ri javob</small>
-        </div>
         <button class="primary-btn" type="button" @click="finishModal.type === 'success' ? goToStudentLogin() : closeFinishModal()">{{ finishModal.type === 'success' ? 'Code kiritish sahifasiga qaytish' : 'Yopish' }}</button>
       </div>
     </div>
@@ -120,16 +115,14 @@ const formattedTime = computed(() => {
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
 })
 
-function showFinishSuccess(result) {
+function showFinishSuccess() {
   finishModal.show = true
   finishModal.type = 'success'
-  finishModal.title = isMental.value ? 'Mental arifmetika yakunlandi' : 'Test muvaffaqiyatli yakunlandi'
-  if (isMental.value && result) {
-    finishModal.message = `Siz ${result.total_questions} tadan ${result.correct_count} tasini to‘g‘ri ishladingiz.`
-  } else {
-    finishModal.message = 'Javoblaringiz adminga yuborildi. To‘g‘ri javoblar kaliti ko‘rsatilmaydi.'
-  }
-  finishModal.result = result || null
+  finishModal.title = 'Test yakunlandi'
+  finishModal.message = 'Javoblaringiz adminga yuborildi.'
+  // O‘quvchiga nechta to‘g‘ri topgani va foiz ko‘rsatilmaydi.
+  // Natijalar faqat admin panelda ko‘rinadi.
+  finishModal.result = null
 }
 
 function showFinishError(message) {
@@ -366,11 +359,15 @@ async function submitMentalExam() {
     }))
 
   try {
-    const res = await api.post('/exam/submit/', { code: payloadCode(), answers: answerList })
+    await api.post('/exam/submit/', {
+      code: payloadCode(),
+      answers: answerList,
+      remaining_seconds: Math.max(0, Number(remainingSeconds.value || 0)),
+    })
     sessionStorage.removeItem('exam_payload')
     localStorage.removeItem(mentalProgressKey())
     localStorage.removeItem(examProgressKey())
-    showFinishSuccess(res.data)
+    showFinishSuccess()
   } catch (e) {
     submitted = false
     showFinishError(e.response?.data?.detail || 'Mental javoblarni yuborishda xatolik.')
@@ -386,11 +383,15 @@ async function submitExam() {
   clearInterval(intervalId)
   const answerList = payload.value.questions.map(q => ({ question_id: q.id, answer: answers[q.id] || '' }))
   try {
-    const res = await api.post('/exam/submit/', { code: payloadCode(), answers: answerList })
+    await api.post('/exam/submit/', {
+      code: payloadCode(),
+      answers: answerList,
+      remaining_seconds: Math.max(0, Number(remainingSeconds.value || 0)),
+    })
     sessionStorage.removeItem('exam_payload')
     localStorage.removeItem(examProgressKey())
     localStorage.removeItem(mentalProgressKey())
-    showFinishSuccess(res.data)
+    showFinishSuccess()
   } catch (e) {
     submitted = false
     showFinishError(e.response?.data?.detail || 'Testni yakunlashda xatolik.')
@@ -445,9 +446,14 @@ function saveProgressBeforeExit() {
   } catch (_) {}
 }
 
+function handleVisibilityChange() {
+  if (document.visibilityState === 'hidden') saveProgressBeforeExit()
+}
+
 onMounted(() => {
   window.addEventListener('beforeunload', saveProgressBeforeExit)
   window.addEventListener('pagehide', saveProgressBeforeExit)
+  document.addEventListener('visibilitychange', handleVisibilityChange)
   const saved = sessionStorage.getItem('exam_payload')
   if (!saved) return
   payload.value = JSON.parse(saved)
@@ -484,6 +490,7 @@ onBeforeUnmount(() => {
   saveProgressBeforeExit()
   window.removeEventListener('beforeunload', saveProgressBeforeExit)
   window.removeEventListener('pagehide', saveProgressBeforeExit)
+  document.removeEventListener('visibilitychange', handleVisibilityChange)
   clearInterval(intervalId)
   if (progressSaveTimer) clearTimeout(progressSaveTimer)
   clearMentalTimers()

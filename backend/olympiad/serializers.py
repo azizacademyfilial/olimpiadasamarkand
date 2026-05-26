@@ -50,6 +50,7 @@ class StudentSerializer(serializers.ModelSerializer):
     correct_count = serializers.SerializerMethodField()
     total_questions = serializers.SerializerMethodField()
     percent = serializers.SerializerMethodField()
+    spent_seconds = serializers.SerializerMethodField()
 
     class Meta:
         model = Student
@@ -57,7 +58,7 @@ class StudentSerializer(serializers.ModelSerializer):
             'id', 'first_name', 'last_name', 'full_name', 'subject', 'subject_name',
             'level', 'level_name', 'center', 'center_name', 'branch', 'branch_display', 'code', 'status',
             'started_at', 'finished_at', 'is_used', 'progress_remaining_seconds', 'progress_current_index',
-            'progress_updated_at', 'created_at', 'correct_count', 'total_questions', 'percent'
+            'progress_updated_at', 'created_at', 'correct_count', 'total_questions', 'percent', 'spent_seconds'
         ]
         read_only_fields = [
             'code', 'status', 'started_at', 'finished_at', 'is_used', 'progress_remaining_seconds',
@@ -75,6 +76,9 @@ class StudentSerializer(serializers.ModelSerializer):
 
     def get_percent(self, obj):
         return getattr(getattr(obj, 'result', None), 'percent', None)
+
+    def get_spent_seconds(self, obj):
+        return getattr(getattr(obj, 'result', None), 'spent_seconds', None)
 
     def validate(self, attrs):
         subject = attrs.get('subject') or getattr(self.instance, 'subject', None)

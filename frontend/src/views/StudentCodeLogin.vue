@@ -15,13 +15,13 @@
 
         <p class="entry-subtitle world-subtitle">
           Al-Aziz Academy o‘quvchilari uchun zamonaviy online test platformasi. Status code orqali testga kiring,
-          topshiriqlarni bajaring va natijangizni tezkor tekshiring.
+          topshiriqlarni bajaring va javoblaringizni adminga yuboring.
         </p>
 
         <div class="world-feature-grid">
           <span>⚡ Tezkor kirish</span>
           <span>🏆 Al-Aziz Academy testlari</span>
-          <span>📊 Natija ko‘rish</span>
+          <span>✅ Test yakunlandi</span>
         </div>
       </div>
 
@@ -89,21 +89,15 @@
 
         <template v-else>
           <div class="result-modal-icon success">✓</div>
-          <h2>{{ publicResult.student_full_name }}</h2>
+          <h2>Test yakunlandi</h2>
           <p class="result-meta">
-            {{ publicResult.subject_name }} · {{ publicResult.level_name }}
+            {{ publicResult.student_full_name }} · {{ publicResult.subject_name }} · {{ publicResult.level_name }}
           </p>
-
-          <div class="public-result-score">
-            <span>Natija</span>
-            <strong>{{ publicResult.correct_count }}/{{ publicResult.total_questions }}</strong>
-            <small>{{ publicResult.total_questions }} tadan {{ publicResult.correct_count }} ta to‘g‘ri</small>
-          </div>
 
           <div class="public-result-details">
             <div>
-              <span>Foiz</span>
-              <b>{{ publicResult.percent }}%</b>
+              <span>Holat</span>
+              <b>Natija adminga yuborildi</b>
             </div>
             <div>
               <span>O‘quv markaz</span>
@@ -116,16 +110,6 @@
             <div>
               <span>Sarflagan vaqt</span>
               <b>{{ formatSeconds(publicResult.spent_seconds) }}</b>
-            </div>
-          </div>
-
-          <div v-if="publicResult.is_mental && publicResult.mental_answers?.length" class="public-mental-breakdown">
-            <h3>Mental javoblaringiz</h3>
-            <div class="public-mental-list">
-              <span v-for="item in publicResult.mental_answers" :key="item.id" :class="item.is_correct ? 'ok' : 'bad'">
-                {{ item.task_order }}. {{ item.expression }} = {{ item.student_answer ?? '—' }}
-                <b>{{ item.is_correct ? 'To‘g‘ri' : 'Noto‘g‘ri' }}</b>
-              </span>
             </div>
           </div>
 

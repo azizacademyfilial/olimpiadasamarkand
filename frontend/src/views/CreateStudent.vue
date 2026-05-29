@@ -101,6 +101,20 @@ const newBranchName = ref('')
 const addingBranch = ref(false)
 const form = reactive({ full_name: '', subject: '', level: '', center: '', branch: '' })
 
+const SUBJECT_ORDER = ['English', 'Koreys tili', 'Rus tili', 'Arab tili', 'Matematika', 'IT', 'Kampyuter', 'Biologiya', 'Hamshiralik', 'Mental arifmetika']
+const KOREYS_LEVEL_ORDER = ['Koreys tili 1', 'Koreys tili 2']
+
+function sortByKnownOrder(items, order) {
+  return [...items].sort((a, b) => {
+    const ai = order.indexOf(a.name)
+    const bi = order.indexOf(b.name)
+    if (ai === -1 && bi === -1) return a.name.localeCompare(b.name)
+    if (ai === -1) return 1
+    if (bi === -1) return -1
+    return ai - bi
+  })
+}
+
 const mainAdmin = computed(() => isMainAdmin(currentAdmin.value))
 const canCreateStudents = computed(() => Boolean(currentAdmin.value?.can_create_students))
 
@@ -115,6 +129,10 @@ const filteredLevels = computed(() => {
     const order = ['Starter 1', 'Beginner 1', 'Beginner 2', 'Beginner 3', 'Elementary 1', 'Elementary 2', 'Elementary 3', 'Pre-Intermediate 1', 'Pre-Intermediate 2', 'Pre-Intermediate 3', 'Intermediate 1', 'Intermediate 2', 'Intermediate 3', 'Upper-Intermediate 1', 'Advanced 1', 'IELTS']
     return [...list].sort((a, b) => order.indexOf(a.name) - order.indexOf(b.name))
   }
+  if (selectedSubject?.name === 'Koreys tili') {
+    return sortByKnownOrder(list, KOREYS_LEVEL_ORDER)
+  }
+
   return list
 })
 
@@ -133,10 +151,14 @@ function splitFullName(fullName) {
   }
 }
 
+function normalizeApiList(data) {
+  return Array.isArray(data) ? data : (data?.results || [])
+}
+
 async function loadOptions() {
   const [subjectsRes, levelsRes] = await Promise.all([api.get('/subjects/'), api.get('/levels/')])
-  subjects.value = subjectsRes.data
-  levels.value = levelsRes.data
+  subjects.value = sortByKnownOrder(normalizeApiList(subjectsRes.data), SUBJECT_ORDER)
+  levels.value = normalizeApiList(levelsRes.data)
 }
 
 async function loadCurrentAdmin() {

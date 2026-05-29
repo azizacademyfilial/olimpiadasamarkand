@@ -253,6 +253,30 @@ from .serializers import (
 )
 
 
+
+
+DEFAULT_SUBJECT_LEVELS_FOR_FORMS = {
+    'Koreys tili': ['Koreys tili 1', 'Koreys tili 2'],
+}
+
+
+def ensure_subject_levels_for_forms():
+    """Keep admin create-student dropdowns from missing newly added subjects.
+
+    Railway runs migrations before the app starts, but older deployments/databases can
+    still miss a subject until seed_demo finishes. This lightweight guard guarantees
+    that /subjects/ and /levels/ can show Koreys tili immediately.
+    """
+    for subject_name, level_names in DEFAULT_SUBJECT_LEVELS_FOR_FORMS.items():
+        subject, _ = Subject.objects.get_or_create(name=subject_name)
+        for level_name in level_names:
+            Level.objects.get_or_create(
+                subject=subject,
+                name=level_name,
+                defaults={'duration_minutes': 30},
+            )
+
+
 class IsAdminUser(permissions.BasePermission):
     def has_permission(self, request, view):
         return bool(request.user and request.user.is_authenticated and request.user.is_staff)
@@ -412,6 +436,10 @@ class SubjectViewSet(viewsets.ModelViewSet):
     serializer_class = SubjectSerializer
     permission_classes = [IsAdminUser]
 
+    def get_queryset(self):
+        ensure_subject_levels_for_forms()
+        return Subject.objects.all().order_by('name')
+
 
 class LevelViewSet(viewsets.ModelViewSet):
     queryset = Level.objects.select_related('subject').all()
@@ -419,7 +447,8 @@ class LevelViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAdminUser]
 
     def get_queryset(self):
-        qs = super().get_queryset()
+        ensure_subject_levels_for_forms()
+        qs = Level.objects.select_related('subject').all()
         subject_id = self.request.query_params.get('subject')
         if subject_id:
             qs = qs.filter(subject_id=subject_id)

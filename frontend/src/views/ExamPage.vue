@@ -3,15 +3,40 @@
     <header class="exam-header">
       <div>
         <h1>{{ payload.student.full_name }}</h1>
-        <p>{{ payload.student.subject_name }} / {{ payload.student.level_name }} / {{ payload.student.center_name }}</p>
+        <p>{{ payload.student.subject_name }} / {{ payload.student.level_name }}<span v-if="payload.selected_version || payload.student.selected_version"> / Version {{ payload.selected_version || payload.student.selected_version }}</span> / {{ payload.student.center_name }}</p>
       </div>
-      <div v-if="!isMental" class="timer" :class="{ danger: remainingSeconds < 300 }">{{ formattedTime }}</div>
-      <div v-else class="timer mental-timer" :class="{ danger: remainingSeconds < 60 }">
+      <div v-if="!isMental && !isVersionSelect" class="timer" :class="{ danger: remainingSeconds < 300 }">{{ formattedTime }}</div>
+      <div v-else-if="isMental" class="timer mental-timer" :class="{ danger: remainingSeconds < 60 }">
         {{ formattedTime }} · Mental {{ Math.min(currentMentalIndex + 1, mentalTasks.length) }}/{{ mentalTasks.length }}
       </div>
     </header>
 
-    <main v-if="isMental" class="mental-stage">
+    <main v-if="isVersionSelect" class="version-select-stage">
+      <div class="version-select-card">
+        <span class="entry-badge">Test versionini tanlang</span>
+        <h2>{{ payload.student.level_name }} uchun version tanlash</h2>
+        <p>Har bir versionda 20 tadan test bor. Qaysi versionni tanlasangiz, shu versiondagi savollar boshlanadi.</p>
+
+        <div class="version-buttons">
+          <button
+            v-for="version in availableVersions"
+            :key="version.value"
+            type="button"
+            class="version-choice-btn"
+            :disabled="versionLoading"
+            @click="chooseVersion(version.value)"
+          >
+            <b>{{ version.label }}</b>
+            <span>{{ version.questions_count }} ta test</span>
+          </button>
+        </div>
+
+        <p v-if="versionError" class="error-box">{{ versionError }}</p>
+        <RouterLink to="/student" class="secondary-btn block-link">Boshqa code kiritish</RouterLink>
+      </div>
+    </main>
+
+    <main v-else-if="isMental" class="mental-stage">
       <div v-if="mentalPhase === 'countdown'" class="countdown-card">
         <p>Tayyorlaning</p>
         <strong>{{ countdownValue }}</strong>
@@ -99,6 +124,8 @@ const shownValue = ref('')
 const mentalAnswers = reactive({})
 const answerInput = ref('')
 const answerInputRef = ref(null)
+const versionLoading = ref(false)
+const versionError = ref('')
 const mentalTimers = []
 
 let intervalId = null
@@ -107,8 +134,10 @@ let progressSaveTimer = null
 let lastServerProgressSave = 0
 let timerTicksSinceServerSave = 0
 
+const isVersionSelect = computed(() => payload.value?.mode === 'version_select')
 const isMental = computed(() => payload.value?.mode === 'mental')
 const mentalTasks = computed(() => payload.value?.mental_tasks || [])
+const availableVersions = computed(() => payload.value?.available_versions || [])
 const formattedTime = computed(() => {
   const m = Math.floor(remainingSeconds.value / 60)
   const s = remainingSeconds.value % 60
@@ -169,7 +198,7 @@ function buildProgressBody() {
 }
 
 async function saveProgressToServer(force = false) {
-  if (!payload.value || submitted || !payloadCode()) return
+  if (!payload.value || submitted || isVersionSelect.value || !payloadCode()) return
   const now = Date.now()
   if (!force && now - lastServerProgressSave < 2500) return
   lastServerProgressSave = now
@@ -400,6 +429,71 @@ async function submitExam() {
   }
 }
 
+
+async function chooseVersion(version) {
+  if (!payload.value || versionLoading.value) return
+  versionLoading.value = true
+  versionError.value = ''
+  try {
+    const res = await api.post('/exam/start/', { code: payloadCode(), version })
+    const nextPayload = { ...res.data, code: payloadCode() }
+    payload.value = nextPayload
+    sessionStorage.setItem('exam_payload', JSON.stringify(nextPayload))
+    bootExamPayload()
+  } catch (e) {
+    versionError.value = e.response?.data?.detail || 'Versionni boshlashda xatolik yuz berdi.'
+  } finally {
+    versionLoading.value = false
+  }
+}
+
+function clearObject(target) {
+  Object.keys(target).forEach(key => delete target[key])
+}
+
+function bootExamPayload() {
+  clearInterval(intervalId)
+  clearMentalTimers()
+  clearObject(answers)
+  clearObject(mentalAnswers)
+  submitted = false
+  submitting.value = false
+  versionError.value = ''
+  finishModal.show = false
+  currentMentalIndex.value = 0
+  mentalPhase.value = 'countdown'
+  countdownValue.value = 3
+
+  if (!payload.value || isVersionSelect.value) return
+
+  if (isMental.value) {
+    // Mentalda code qayta kiritilganda vaqt yangidan boshlanmaydi.
+    // Backend bergan started_at bo‘yicha qolgan vaqt hisoblanadi.
+    const durationMinutes = safeDurationMinutes(payload.value.duration_minutes || 5)
+    remainingSeconds.value = remainingFromStartedAt(durationMinutes)
+
+    loadMentalProgress()
+    if (remainingSeconds.value <= 0 || currentMentalIndex.value >= mentalTasks.value.length) {
+      submitMentalExam()
+    } else {
+      startTimer()
+      startMentalCountdown(currentMentalIndex.value)
+    }
+    return
+  }
+
+  // Oddiy testda 30 minut vaqt beriladi. Code qayta kiritilganda avvalgi javoblar va qolgan vaqt saqlanadi.
+  const durationMinutes = safeDurationMinutes(payload.value.duration_minutes || 30)
+  remainingSeconds.value = remainingFromStartedAt(durationMinutes)
+  loadTestProgress()
+
+  if (remainingSeconds.value <= 0) {
+    submitExam()
+  } else {
+    startTimer()
+  }
+}
+
 function startTimer() {
   clearInterval(intervalId)
   intervalId = setInterval(() => {
@@ -431,7 +525,7 @@ function startTimer() {
 }
 
 function saveProgressBeforeExit() {
-  if (!payload.value || submitted) return
+  if (!payload.value || submitted || isVersionSelect.value) return
   if (isMental.value) persistMentalProgress(false)
   else persistTestProgress(false)
 
@@ -457,33 +551,7 @@ onMounted(() => {
   const saved = sessionStorage.getItem('exam_payload')
   if (!saved) return
   payload.value = JSON.parse(saved)
-
-  if (isMental.value) {
-    // Mentalda code qayta kiritilganda vaqt yangidan boshlanmaydi.
-    // Backend bergan started_at bo‘yicha qolgan vaqt hisoblanadi.
-    const durationMinutes = safeDurationMinutes(payload.value.duration_minutes || 5)
-    remainingSeconds.value = remainingFromStartedAt(durationMinutes)
-
-    loadMentalProgress()
-    if (remainingSeconds.value <= 0 || currentMentalIndex.value >= mentalTasks.value.length) {
-      submitMentalExam()
-    } else {
-      startTimer()
-      startMentalCountdown(currentMentalIndex.value)
-    }
-    return
-  }
-
-  // Oddiy testda 30 minut vaqt beriladi. Code qayta kiritilganda avvalgi javoblar va qolgan vaqt saqlanadi.
-  const durationMinutes = safeDurationMinutes(payload.value.duration_minutes || 30)
-  remainingSeconds.value = remainingFromStartedAt(durationMinutes)
-  loadTestProgress()
-
-  if (remainingSeconds.value <= 0) {
-    submitExam()
-  } else {
-    startTimer()
-  }
+  bootExamPayload()
 })
 
 onBeforeUnmount(() => {
@@ -496,3 +564,72 @@ onBeforeUnmount(() => {
   clearMentalTimers()
 })
 </script>
+
+
+<style scoped>
+.version-select-stage {
+  min-height: calc(100vh - 120px);
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.version-select-card {
+  width: min(720px, 100%);
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(148, 163, 184, 0.26);
+  border-radius: 28px;
+  padding: 28px;
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.14);
+  text-align: center;
+}
+
+.version-select-card h2 {
+  margin: 12px 0 8px;
+  color: #0f172a;
+}
+
+.version-select-card p {
+  color: #64748b;
+}
+
+.version-buttons {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin: 24px 0;
+}
+
+.version-choice-btn {
+  border: 1px solid rgba(79, 70, 229, 0.28);
+  border-radius: 22px;
+  padding: 20px 14px;
+  background: linear-gradient(180deg, #ffffff, #eef2ff);
+  cursor: pointer;
+  display: grid;
+  gap: 8px;
+  color: #1e1b4b;
+  transition: 0.2s ease;
+}
+
+.version-choice-btn:hover:not(:disabled) {
+  transform: translateY(-3px);
+  border-color: rgba(79, 70, 229, 0.65);
+  box-shadow: 0 16px 34px rgba(79, 70, 229, 0.18);
+}
+
+.version-choice-btn b {
+  font-size: 20px;
+}
+
+.version-choice-btn span {
+  color: #64748b;
+  font-weight: 800;
+}
+
+@media (max-width: 720px) {
+  .version-buttons {
+    grid-template-columns: 1fr;
+  }
+}
+</style>

@@ -70,10 +70,24 @@
         </div>
 
         <div v-if="!activeLevel" class="empty-state">Daraja tanlang.</div>
-        <div v-else class="question-view-list">
+        <div v-else>
+          <div v-if="versionCards.length > 1" class="version-filter-row">
+            <button
+              v-for="version in versionCards"
+              :key="version.value"
+              type="button"
+              class="version-filter-btn"
+              :class="{ active: activeVersion === version.value }"
+              @click="selectVersion(version.value)"
+            >
+              Version {{ version.value }} <b>{{ version.count }}</b>
+            </button>
+          </div>
+          <div class="question-view-list">
           <article v-for="(q, index) in selectedQuestions" :key="q.id" class="question-view-card">
             <div class="question-top">
               <span class="question-number">{{ index + 1 }}</span>
+              <span class="question-version-badge">Version {{ q.version || 1 }}</span>
               <button type="button" class="secondary-btn compact-btn" @click="toggleQuestion(q.id)">
                 {{ openedQuestionId === q.id ? 'Yopish' : 'Ko‘rish' }}
               </button>
@@ -88,6 +102,7 @@
             </div>
           </article>
           <p v-if="!selectedQuestions.length" class="hint-box">Bu darajada testlar yo‘q.</p>
+          </div>
         </div>
       </section>
     </div>
@@ -105,6 +120,13 @@
           <select v-model="form.level" required>
             <option value="">Tanlang</option>
             <option v-for="l in filteredLevels" :key="l.id" :value="l.id">{{ l.name }}</option>
+          </select>
+        </label>
+        <label>Version
+          <select v-model.number="form.version" required>
+            <option :value="1">Version 1</option>
+            <option :value="2">Version 2</option>
+            <option :value="3">Version 3</option>
           </select>
         </label>
         <label class="full-span">Savol matni <textarea v-model="form.text" required rows="3"></textarea></label>
@@ -138,6 +160,7 @@ const levels = ref([])
 const questions = ref([])
 const activeSubjectId = ref(null)
 const activeLevelId = ref(null)
+const activeVersion = ref(1)
 const openedQuestionId = ref(null)
 const loading = ref(false)
 const message = ref('')
@@ -149,6 +172,7 @@ const mainAdmin = computed(() => isMainAdmin(adminProfile.value))
 const form = reactive({
   subject: '',
   level: '',
+  version: 1,
   text: '',
   option_a: '',
   option_b: '',
@@ -201,7 +225,22 @@ const levelCards = computed(() => levels.value
 
 const activeLevel = computed(() => levels.value.find(l => Number(l.id) === Number(activeLevelId.value)))
 
-const selectedQuestions = computed(() => questions.value.filter(q => Number(q.level) === Number(activeLevelId.value)))
+const versionCards = computed(() => {
+  const counts = new Map()
+  questions.value
+    .filter(q => Number(q.level) === Number(activeLevelId.value))
+    .forEach(q => {
+      const version = Number(q.version || 1)
+      counts.set(version, (counts.get(version) || 0) + 1)
+    })
+  return [...counts.entries()]
+    .sort((a, b) => a[0] - b[0])
+    .map(([value, count]) => ({ value, count }))
+})
+
+const selectedQuestions = computed(() => questions.value.filter(q =>
+  Number(q.level) === Number(activeLevelId.value) && Number(q.version || 1) === Number(activeVersion.value)
+))
 
 const filteredLevels = computed(() => levels.value.filter(l => String(l.subject) === String(form.subject)))
 
@@ -211,11 +250,26 @@ function selectSubject(subjectId) {
     Number(level.subject) === Number(subjectId) && (questionCountsByLevel.value.get(Number(level.id)) || 0) > 0
   )
   activeLevelId.value = firstLevel ? Number(firstLevel.id) : null
+  setFirstVersionForActiveLevel()
   openedQuestionId.value = null
+}
+
+function setFirstVersionForActiveLevel() {
+  const versions = questions.value
+    .filter(q => Number(q.level) === Number(activeLevelId.value))
+    .map(q => Number(q.version || 1))
+    .sort((a, b) => a - b)
+  activeVersion.value = versions.length ? versions[0] : 1
 }
 
 function selectLevel(levelId) {
   activeLevelId.value = Number(levelId)
+  setFirstVersionForActiveLevel()
+  openedQuestionId.value = null
+}
+
+function selectVersion(version) {
+  activeVersion.value = Number(version || 1)
   openedQuestionId.value = null
 }
 
@@ -229,6 +283,7 @@ function answerClass(question, letter) {
 
 function onFormSubjectChange() {
   form.level = ''
+  form.version = 1
 }
 
 async function loadData() {
@@ -266,6 +321,7 @@ async function createQuestion() {
     Object.assign(form, {
       subject: '',
       level: '',
+      version: 1,
       text: '',
       option_a: '',
       option_b: '',
@@ -409,6 +465,42 @@ onMounted(loadData)
 .compact-btn {
   padding: 8px 12px;
   border-radius: 12px;
+}
+
+
+.version-filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.version-filter-btn,
+.question-version-badge {
+  border: 1px solid rgba(79, 70, 229, 0.25);
+  border-radius: 999px;
+  background: #eef2ff;
+  color: #3730a3;
+  font-weight: 900;
+}
+
+.version-filter-btn {
+  padding: 9px 13px;
+  cursor: pointer;
+}
+
+.version-filter-btn.active {
+  background: #4f46e5;
+  color: #fff;
+}
+
+.version-filter-btn b {
+  margin-left: 8px;
+}
+
+.question-version-badge {
+  padding: 7px 10px;
+  font-size: 12px;
 }
 
 .answers-grid {

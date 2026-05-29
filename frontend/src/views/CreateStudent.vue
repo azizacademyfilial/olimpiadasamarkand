@@ -112,7 +112,7 @@ const filteredLevels = computed(() => {
     return [...list].sort((a, b) => order.indexOf(a.name) - order.indexOf(b.name))
   }
   if (selectedSubject?.name === 'English') {
-    const order = ['Starter', 'Beginner', 'Elementary', 'Pre-Intermediate', 'Intermediate']
+    const order = ['Starter 1', 'Beginner 1', 'Beginner 2', 'Beginner 3', 'Elementary 1', 'Elementary 2', 'Elementary 3', 'Pre-Intermediate 1', 'Pre-Intermediate 2', 'Pre-Intermediate 3', 'Intermediate 1', 'Intermediate 2', 'Intermediate 3', 'Upper-Intermediate 1', 'Advanced 1', 'IELTS']
     return [...list].sort((a, b) => order.indexOf(a.name) - order.indexOf(b.name))
   }
   return list

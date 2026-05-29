@@ -79,6 +79,7 @@ class Student(models.Model):
     last_name = models.CharField(max_length=255)
     subject = models.ForeignKey(Subject, on_delete=models.PROTECT, related_name='students')
     level = models.ForeignKey(Level, on_delete=models.PROTECT, related_name='students')
+    selected_version = models.PositiveSmallIntegerField(null=True, blank=True)
     center = models.ForeignKey(Center, on_delete=models.PROTECT, related_name='students')
     branch = models.CharField(max_length=100, default='Boshqa')
     code = models.CharField(max_length=6, unique=True, blank=True)
@@ -125,6 +126,7 @@ class Question(models.Model):
 
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='questions')
     level = models.ForeignKey(Level, on_delete=models.CASCADE, related_name='questions')
+    version = models.PositiveSmallIntegerField(default=1)
     text = models.TextField()
     option_a = models.CharField(max_length=500)
     option_b = models.CharField(max_length=500)
@@ -137,7 +139,7 @@ class Question(models.Model):
         ordering = ['id']
 
     def __str__(self):
-        return f'{self.subject.name} / {self.level.name} / {self.text[:40]}'
+        return f'{self.subject.name} / {self.level.name} / Version {self.version} / {self.text[:40]}'
 
 
 class Result(models.Model):

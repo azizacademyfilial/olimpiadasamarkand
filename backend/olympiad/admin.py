@@ -27,16 +27,16 @@ class LevelAdmin(admin.ModelAdmin):
 
 @admin.register(Student)
 class StudentAdmin(admin.ModelAdmin):
-    list_display = ['full_name', 'subject', 'level', 'center', 'branch', 'code', 'status', 'is_used', 'created_at']
-    list_filter = ['status', 'subject', 'level', 'center', 'branch']
+    list_display = ['full_name', 'subject', 'level', 'selected_version', 'center', 'branch', 'code', 'status', 'is_used', 'created_at']
+    list_filter = ['status', 'subject', 'level', 'selected_version', 'center', 'branch']
     search_fields = ['first_name', 'last_name', 'code']
     readonly_fields = ['code', 'created_at']
 
 
 @admin.register(Question)
 class QuestionAdmin(admin.ModelAdmin):
-    list_display = ['text', 'subject', 'level', 'correct_answer']
-    list_filter = ['subject', 'level']
+    list_display = ['text', 'subject', 'level', 'version', 'correct_answer']
+    list_filter = ['subject', 'level', 'version']
     search_fields = ['text']
 
 

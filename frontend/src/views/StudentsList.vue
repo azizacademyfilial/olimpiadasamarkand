@@ -73,6 +73,7 @@
               <th>O‘quvchi</th>
               <th>Fan</th>
               <th>Daraja</th>
+              <th>Version</th>
               <th>O‘quv markaz</th>
               <th>Filial</th>
               <th>Code</th>
@@ -91,6 +92,7 @@
               <td><b>{{ s.full_name }}</b></td>
               <td>{{ s.subject_name }}</td>
               <td>{{ s.level_name }}</td>
+              <td>{{ s.selected_version ? `Version ${s.selected_version}` : '—' }}</td>
               <td>{{ s.center_name }}</td>
               <td>{{ s.branch }}</td>
               <td>
@@ -123,7 +125,7 @@
               </td>
             </tr>
             <tr v-if="!students.length">
-              <td :colspan="canManageStudents ? 12 : 10" class="empty-cell">O‘quvchi topilmadi</td>
+              <td :colspan="canManageStudents ? 13 : 11" class="empty-cell">O‘quvchi topilmadi</td>
             </tr>
           </tbody>
         </table>
@@ -266,7 +268,7 @@ const editFilteredLevels = computed(() => {
   }
 
   if (selectedSubject?.name === 'English') {
-    const order = ['Starter', 'Beginner', 'Elementary', 'Pre-Intermediate', 'Intermediate']
+    const order = ['Starter 1', 'Beginner 1', 'Beginner 2', 'Beginner 3', 'Elementary 1', 'Elementary 2', 'Elementary 3', 'Pre-Intermediate 1', 'Pre-Intermediate 2', 'Pre-Intermediate 3', 'Intermediate 1', 'Intermediate 2', 'Intermediate 3', 'Upper-Intermediate 1', 'Advanced 1', 'IELTS']
     return [...list].sort((a, b) => order.indexOf(a.name) - order.indexOf(b.name))
   }
 

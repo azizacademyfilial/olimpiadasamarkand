@@ -32,6 +32,37 @@ def get_exam_duration_seconds(student):
     return max(1, int(get_exam_duration_minutes(student) * 60))
 
 
+def get_test_versions(student):
+    versions = list(
+        Question.objects.filter(subject=student.subject, level=student.level)
+        .values_list('version', flat=True)
+        .distinct()
+        .order_by('version')
+    )
+    return [int(version or 1) for version in versions]
+
+
+def build_version_choices(student):
+    choices = []
+    for version in get_test_versions(student):
+        count = Question.objects.filter(subject=student.subject, level=student.level, version=version).count()
+        if count:
+            choices.append({
+                'value': version,
+                'label': f'Version {version}',
+                'questions_count': count,
+            })
+    return choices
+
+
+def normalize_requested_version(raw_version):
+    try:
+        version = int(raw_version)
+    except (TypeError, ValueError):
+        return None
+    return version if version > 0 else None
+
+
 def normalize_progress_answers(raw_answers, is_mental=False):
     """Clean progress answers before saving them on the student row.
 
@@ -445,6 +476,7 @@ class StudentViewSet(viewsets.ModelViewSet):
             'started_at': None,
             'finished_at': None,
             'is_used': False,
+            'selected_version': None,
             'progress_answers': {},
             'progress_remaining_seconds': None,
             'progress_current_index': 0,
@@ -615,6 +647,7 @@ class StudentViewSet(viewsets.ModelViewSet):
                     started_at=None,
                     finished_at=None,
                     is_used=False,
+                    selected_version=None,
                     progress_answers={},
                     progress_remaining_seconds=None,
                     progress_current_index=0,
@@ -636,7 +669,7 @@ class StudentViewSet(viewsets.ModelViewSet):
         ws = wb.active
         ws.title = 'Barcha oquvchilar'
 
-        headers = ['№', 'Ism familyasi', 'Fani', 'Darajasi', "O'quv markazi", 'Filial', 'Code', 'Status', 'Natijasi', 'Sarflagan vaqt']
+        headers = ['№', 'Ism familyasi', 'Fani', 'Darajasi', 'Version', "O'quv markazi", 'Filial', 'Code', 'Status', 'Natijasi', 'Sarflagan vaqt']
         ws.append(headers)
 
         header_fill = PatternFill('solid', fgColor='1F4E79')
@@ -668,6 +701,7 @@ class StudentViewSet(viewsets.ModelViewSet):
                 student.full_name,
                 student.subject.name,
                 student.level.name,
+                f"Version {student.selected_version}" if student.selected_version else '—',
                 student.center.name,
                 student.branch,
                 student.code,
@@ -758,7 +792,7 @@ class ResultViewSet(viewsets.ReadOnlyModelViewSet):
         ws.title = 'Natijalar'
 
         headers = [
-            '№', 'Ism Familya', 'Fan', 'Daraja', "O'quv markaz", 'Filial', 'Status code',
+            '№', 'Ism Familya', 'Fan', 'Daraja', 'Version', "O'quv markaz", 'Filial', 'Status code',
             'To‘g‘ri javoblar', 'Jami savollar', 'Foiz', 'Boshlangan vaqti',
             'Tugatgan vaqti', 'Sarflagan vaqt'
         ]
@@ -777,6 +811,7 @@ class ResultViewSet(viewsets.ReadOnlyModelViewSet):
                 result.student.full_name,
                 result.student.subject.name,
                 result.student.level.name,
+                f"Version {result.student.selected_version}" if result.student.selected_version else '—',
                 result.student.center.name,
                 result.student.branch,
                 result.student.code,
@@ -819,7 +854,7 @@ class ResultViewSet(viewsets.ReadOnlyModelViewSet):
         ws.title = 'Mental javoblari'
 
         headers = [
-            '№', 'Ism Familya', 'Fan', 'Daraja', "O'quv markaz", 'Filial', 'Status code',
+            '№', 'Ism Familya', 'Fan', 'Daraja', 'Version', "O'quv markaz", 'Filial', 'Status code',
             'Umumiy natija', 'Foiz', 'Sarflagan vaqt', 'Misol №', 'Misol', "O'quvchi javobi",
             "To'g'ri javob", 'Holat'
         ]
@@ -843,6 +878,7 @@ class ResultViewSet(viewsets.ReadOnlyModelViewSet):
                     result.student.full_name,
                     result.student.subject.name,
                     result.student.level.name,
+                    f"Version {result.student.selected_version}" if result.student.selected_version else '—',
                     result.student.center.name,
                     result.student.branch,
                     result.student.code,
@@ -914,6 +950,7 @@ class PublicResultLookupAPIView(APIView):
             'student_code': student.code,
             'subject_name': student.subject.name,
             'level_name': student.level.name,
+            'selected_version': student.selected_version,
             'center_name': student.center.name,
             'branch': student.branch,
             'total_questions': result.total_questions,
@@ -931,6 +968,7 @@ class ExamStartAPIView(APIView):
     @transaction.atomic
     def post(self, request):
         code = str(request.data.get('code', '')).strip()
+        requested_version = normalize_requested_version(request.data.get('version'))
         if not code:
             return Response({'detail': 'Status code kiriting.'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -945,6 +983,17 @@ class ExamStartAPIView(APIView):
         is_mental_exam = is_mental_subject(student.subject.name)
         duration_minutes = get_exam_duration_minutes(student)
         duration_seconds = get_exam_duration_seconds(student)
+
+        def build_version_select_payload():
+            choices = build_version_choices(student)
+            if not choices:
+                return None
+            return {
+                'mode': 'version_select',
+                'student': StudentSerializer(student).data,
+                'duration_minutes': duration_minutes,
+                'available_versions': choices,
+            }
 
         def build_mental_payload(started_at, resume=False):
             mental_tasks = generate_mental_tasks(student)
@@ -970,7 +1019,12 @@ class ExamStartAPIView(APIView):
             }
 
         def build_test_payload(started_at, resume=False):
-            questions = Question.objects.filter(subject=student.subject, level=student.level).order_by('id')
+            exam_version = student.selected_version or requested_version or 1
+            questions = Question.objects.filter(
+                subject=student.subject,
+                level=student.level,
+                version=exam_version,
+            ).order_by('id')
             if not questions.exists():
                 return None
             return {
@@ -981,10 +1035,27 @@ class ExamStartAPIView(APIView):
                 'started_at': started_at.isoformat(),
                 'server_now': timezone.now().isoformat(),
                 'resume': bool(resume),
+                'selected_version': exam_version,
                 'saved_answers': student.progress_answers or {},
                 'progress_current_index': student.progress_current_index or 0,
                 'questions': QuestionForExamSerializer(questions, many=True).data,
             }
+
+        if not is_mental_exam and student.status == Student.Status.NOT_STARTED:
+            version_choices = build_version_choices(student)
+            if not version_choices:
+                return Response({'detail': 'Bu fan va daraja uchun testlar hali qo‘shilmagan.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            valid_versions = [item['value'] for item in version_choices]
+            if requested_version is None:
+                # 2 yoki undan ko‘p version bo‘lsa, vaqt boshlanmasdan avval o‘quvchi version tanlaydi.
+                # Faqat bitta version bo‘lsa, eski tartib saqlanadi va test darrov boshlanadi.
+                if len(valid_versions) > 1:
+                    return Response(build_version_select_payload())
+                requested_version = valid_versions[0]
+
+            if requested_version not in valid_versions:
+                return Response({'detail': 'Tanlangan version uchun test topilmadi.'}, status=status.HTTP_400_BAD_REQUEST)
 
         # Agar o‘quvchi testni boshlab, adashib chiqib ketgan bo‘lsa,
         # code qayta kiritilganda bloklamaymiz. Test yakunlanmagan bo‘lsa,
@@ -1014,12 +1085,16 @@ class ExamStartAPIView(APIView):
         student.started_at = now
         student.finished_at = None
         student.is_used = False
+        if not is_mental_exam:
+            student.selected_version = requested_version or 1
+        else:
+            student.selected_version = None
         student.progress_answers = {}
         student.progress_remaining_seconds = duration_seconds
         student.progress_current_index = 0
         student.progress_updated_at = timezone.now()
         student.save(update_fields=[
-            'status', 'started_at', 'finished_at', 'is_used', 'progress_answers',
+            'status', 'started_at', 'finished_at', 'is_used', 'selected_version', 'progress_answers',
             'progress_remaining_seconds', 'progress_current_index', 'progress_updated_at'
         ])
 
@@ -1030,12 +1105,13 @@ class ExamStartAPIView(APIView):
         if payload is None:
             student.status = Student.Status.NOT_STARTED
             student.started_at = None
+            student.selected_version = None
             student.progress_answers = {}
             student.progress_remaining_seconds = None
             student.progress_current_index = 0
             student.progress_updated_at = None
             student.save(update_fields=[
-                'status', 'started_at', 'progress_answers', 'progress_remaining_seconds',
+                'status', 'started_at', 'selected_version', 'progress_answers', 'progress_remaining_seconds',
                 'progress_current_index', 'progress_updated_at'
             ])
             return Response({'detail': 'Bu fan va daraja uchun testlar hali qo‘shilmagan.'}, status=status.HTTP_400_BAD_REQUEST)
@@ -1197,7 +1273,8 @@ class ExamSubmitAPIView(APIView):
             if selected in ['A', 'B', 'C', 'D']:
                 answer_map[qid] = selected
 
-        questions = list(Question.objects.filter(subject=student.subject, level=student.level).order_by('id'))
+        exam_version = student.selected_version or 1
+        questions = list(Question.objects.filter(subject=student.subject, level=student.level, version=exam_version).order_by('id'))
         correct_count = 0
         finished_at = timezone.now()
         started_at = student.started_at or finished_at

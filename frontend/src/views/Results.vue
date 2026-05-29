@@ -38,6 +38,7 @@
               <th>O‘quvchi</th>
               <th>Fan</th>
               <th>Daraja</th>
+              <th>Version</th>
               <th>O‘quv markaz</th>
               <th>Filial</th>
               <th>Code</th>
@@ -52,6 +53,7 @@
               <td><b>{{ r.student_full_name }}</b></td>
               <td>{{ r.subject_name }}</td>
               <td>{{ r.level_name }}</td>
+              <td>{{ r.student_selected_version ? `Version ${r.student_selected_version}` : '—' }}</td>
               <td>{{ r.center_name }}</td>
               <td>{{ r.student_branch }}</td>
               <td>{{ r.student_code }}</td>
@@ -60,7 +62,7 @@
               <td>{{ formatSeconds(r.spent_seconds) }}</td>
             </tr>
             <tr v-if="!results.length">
-              <td colspan="10" class="empty-cell">Natija topilmadi</td>
+              <td colspan="11" class="empty-cell">Natija topilmadi</td>
             </tr>
           </tbody>
         </table>

@@ -56,12 +56,12 @@ class StudentSerializer(serializers.ModelSerializer):
         model = Student
         fields = [
             'id', 'first_name', 'last_name', 'full_name', 'subject', 'subject_name',
-            'level', 'level_name', 'center', 'center_name', 'branch', 'branch_display', 'code', 'status',
+            'level', 'level_name', 'selected_version', 'center', 'center_name', 'branch', 'branch_display', 'code', 'status',
             'started_at', 'finished_at', 'is_used', 'progress_remaining_seconds', 'progress_current_index',
             'progress_updated_at', 'created_at', 'correct_count', 'total_questions', 'percent', 'spent_seconds'
         ]
         read_only_fields = [
-            'code', 'status', 'started_at', 'finished_at', 'is_used', 'progress_remaining_seconds',
+            'code', 'status', 'started_at', 'finished_at', 'is_used', 'selected_version', 'progress_remaining_seconds',
             'progress_current_index', 'progress_updated_at', 'created_at'
         ]
 
@@ -95,7 +95,7 @@ class QuestionAdminSerializer(serializers.ModelSerializer):
     class Meta:
         model = Question
         fields = [
-            'id', 'subject', 'subject_name', 'level', 'level_name', 'text',
+            'id', 'subject', 'subject_name', 'level', 'level_name', 'version', 'text',
             'option_a', 'option_b', 'option_c', 'option_d', 'correct_answer', 'created_at'
         ]
 
@@ -103,7 +103,7 @@ class QuestionAdminSerializer(serializers.ModelSerializer):
 class QuestionForExamSerializer(serializers.ModelSerializer):
     class Meta:
         model = Question
-        fields = ['id', 'text', 'option_a', 'option_b', 'option_c', 'option_d']
+        fields = ['id', 'version', 'text', 'option_a', 'option_b', 'option_c', 'option_d']
 
 
 class StudentAnswerSerializer(serializers.ModelSerializer):
@@ -128,6 +128,7 @@ class ResultSerializer(serializers.ModelSerializer):
     level_name = serializers.CharField(source='student.level.name', read_only=True)
     center_name = serializers.CharField(source='student.center.name', read_only=True)
     student_branch = serializers.CharField(source='student.branch', read_only=True)
+    student_selected_version = serializers.IntegerField(source='student.selected_version', read_only=True)
     answers = StudentAnswerSerializer(many=True, read_only=True)
     mental_answers = MentalTaskSerializer(many=True, read_only=True)
 
@@ -135,6 +136,6 @@ class ResultSerializer(serializers.ModelSerializer):
         model = Result
         fields = [
             'id', 'student', 'student_full_name', 'student_code', 'subject_name',
-            'level_name', 'center_name', 'student_branch', 'total_questions', 'correct_count',
+            'level_name', 'student_selected_version', 'center_name', 'student_branch', 'total_questions', 'correct_count',
             'percent', 'started_at', 'finished_at', 'spent_seconds', 'created_at', 'answers', 'mental_answers'
         ]

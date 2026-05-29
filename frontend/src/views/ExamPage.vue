@@ -3,7 +3,7 @@
     <header class="exam-header">
       <div>
         <h1>{{ payload.student.full_name }}</h1>
-        <p>{{ payload.student.subject_name }} / {{ payload.student.level_name }}<span v-if="payload.selected_version || payload.student.selected_version"> / Version {{ payload.selected_version || payload.student.selected_version }}</span> / {{ payload.student.center_name }}</p>
+        <p>{{ payload.student.subject_name }}</p>
       </div>
       <div v-if="!isMental && !isVersionSelect" class="timer" :class="{ danger: remainingSeconds < 300 }">{{ formattedTime }}</div>
       <div v-else-if="isMental" class="timer mental-timer" :class="{ danger: remainingSeconds < 60 }">
@@ -14,7 +14,7 @@
     <main v-if="isVersionSelect" class="version-select-stage">
       <div class="version-select-card">
         <span class="entry-badge">Test versionini tanlang</span>
-        <h2>{{ payload.student.level_name }} uchun version tanlash</h2>
+        <h2>Version tanlash</h2>
         <p>Har bir versionda 20 tadan test bor. Qaysi versionni tanlasangiz, shu versiondagi savollar boshlanadi.</p>
 
         <div class="version-buttons">

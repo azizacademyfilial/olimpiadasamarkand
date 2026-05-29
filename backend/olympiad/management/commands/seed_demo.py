@@ -5367,11 +5367,21 @@ class Command(BaseCommand):
         # ENGLISH_IELTS_VERSIONED_TESTS_END
 
         # BACKEND_MATH_OPTIONS_MIX_START
-        # Backend 1, Backend 2 va Matematika 1-sinf testlarida to'g'ri javoblar
-        # bitta variantda yig'ilib qolmasligi uchun variantlar deterministik aralashtiriladi.
-        def _mix_options_for_level(_subject_name, _level_name):
-            _pattern = ['C', 'A', 'D', 'B', 'A', 'D', 'C', 'B', 'D', 'A',
-                        'B', 'C', 'A', 'D', 'B', 'C', 'D', 'B', 'A', 'C']
+        # Backend 1, Backend 2, Matematika 1-sinf va 5-sinf testlarida
+        # to'g'ri javoblar bir xil ketma-ketlikda qolmasligi uchun
+        # har bir daraja uchun alohida deterministik variant tartibi qo'llanadi.
+        _answer_patterns = {
+            ('IT', 'Backend 1'): ['B', 'D', 'A', 'C', 'A', 'C', 'D', 'B', 'C', 'A',
+                                  'B', 'D', 'D', 'B', 'C', 'A', 'A', 'D', 'B', 'C'],
+            ('IT', 'Backend 2'): ['D', 'A', 'C', 'B', 'C', 'B', 'A', 'D', 'B', 'D',
+                                  'C', 'A', 'A', 'C', 'D', 'B', 'C', 'A', 'B', 'D'],
+            ('Matematika', '1-sinf'): ['C', 'B', 'D', 'A', 'D', 'A', 'C', 'B', 'A', 'C',
+                                       'D', 'B', 'B', 'D', 'A', 'C', 'D', 'A', 'C', 'B'],
+            ('Matematika', '5-sinf'): ['A', 'C', 'B', 'D', 'B', 'D', 'A', 'C', 'D', 'B',
+                                       'C', 'A', 'C', 'A', 'D', 'B', 'A', 'C', 'D', 'B'],
+        }
+
+        def _mix_options_for_level(_subject_name, _level_name, _pattern):
             _subject = Subject.objects.filter(name=_subject_name).first()
             if not _subject:
                 return
@@ -5400,9 +5410,8 @@ class Command(BaseCommand):
                 _question.correct_answer = _target
                 _question.save(update_fields=['option_a', 'option_b', 'option_c', 'option_d', 'correct_answer'])
 
-        _mix_options_for_level('IT', 'Backend 1')
-        _mix_options_for_level('IT', 'Backend 2')
-        _mix_options_for_level('Matematika', '1-sinf')
+        for (_subject_name, _level_name), _pattern in _answer_patterns.items():
+            _mix_options_for_level(_subject_name, _level_name, _pattern)
         # BACKEND_MATH_OPTIONS_MIX_END
 
         # TEST_DURATION_NORMALIZATION_START

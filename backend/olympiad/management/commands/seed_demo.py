@@ -5366,6 +5366,45 @@ class Command(BaseCommand):
                 _old_level.delete()
         # ENGLISH_IELTS_VERSIONED_TESTS_END
 
+        # BACKEND_MATH_OPTIONS_MIX_START
+        # Backend 1, Backend 2 va Matematika 1-sinf testlarida to'g'ri javoblar
+        # bitta variantda yig'ilib qolmasligi uchun variantlar deterministik aralashtiriladi.
+        def _mix_options_for_level(_subject_name, _level_name):
+            _pattern = ['C', 'A', 'D', 'B', 'A', 'D', 'C', 'B', 'D', 'A',
+                        'B', 'C', 'A', 'D', 'B', 'C', 'D', 'B', 'A', 'C']
+            _subject = Subject.objects.filter(name=_subject_name).first()
+            if not _subject:
+                return
+            _level = Level.objects.filter(subject=_subject, name=_level_name).first()
+            if not _level:
+                return
+            _questions = list(Question.objects.filter(subject=_subject, level=_level).order_by('id'))
+            for _index, _question in enumerate(_questions):
+                _target = _pattern[_index % len(_pattern)]
+                _options = {
+                    'A': _question.option_a,
+                    'B': _question.option_b,
+                    'C': _question.option_c,
+                    'D': _question.option_d,
+                }
+                _correct_text = _options.get(_question.correct_answer, _question.option_a)
+                _new_options = {_target: _correct_text}
+                _remaining_letters = [letter for letter in ['A', 'B', 'C', 'D'] if letter != _target]
+                _remaining_values = [value for letter, value in _options.items() if letter != _question.correct_answer]
+                for _letter, _value in zip(_remaining_letters, _remaining_values):
+                    _new_options[_letter] = _value
+                _question.option_a = _new_options['A']
+                _question.option_b = _new_options['B']
+                _question.option_c = _new_options['C']
+                _question.option_d = _new_options['D']
+                _question.correct_answer = _target
+                _question.save(update_fields=['option_a', 'option_b', 'option_c', 'option_d', 'correct_answer'])
+
+        _mix_options_for_level('IT', 'Backend 1')
+        _mix_options_for_level('IT', 'Backend 2')
+        _mix_options_for_level('Matematika', '1-sinf')
+        # BACKEND_MATH_OPTIONS_MIX_END
+
         # TEST_DURATION_NORMALIZATION_START
         # Mental arifmetikadan tashqari barcha testlar 30 minut.
         for level in Level.objects.select_related('subject').all():

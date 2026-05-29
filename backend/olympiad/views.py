@@ -105,6 +105,20 @@ def get_resume_remaining_seconds(student):
     return duration_seconds
 
 
+
+
+def apply_visible_score_penalty(correct_count, total_questions):
+    """Official 1-point penalty used for all visible saved results.
+
+    The stored result is the final visible score shown to students and admins.
+    It never goes below 0 and the percent is calculated from this final score.
+    """
+    total = max(0, int(total_questions or 0))
+    raw = max(0, int(correct_count or 0))
+    final_score = max(raw - 1, 0) if total else 0
+    percent = (final_score / total * 100) if total else 0
+    return final_score, round(percent, 2)
+
 def calculate_spent_seconds(student, finished_at, submitted_remaining_seconds=None):
     """Return real working time shown in admin.
 
@@ -1245,9 +1259,9 @@ class ExamSubmitAPIView(APIView):
             task.is_correct = is_correct
             task.save(update_fields=['result', 'student_answer', 'is_correct'])
 
-        percent = (correct_count / len(tasks) * 100) if tasks else 0
-        result.correct_count = correct_count
-        result.percent = round(percent, 2)
+        final_score, percent = apply_visible_score_penalty(correct_count, len(tasks))
+        result.correct_count = final_score
+        result.percent = percent
         result.save(update_fields=['correct_count', 'percent'])
 
         student.status = Student.Status.COMPLETED
@@ -1333,9 +1347,9 @@ class ExamSubmitAPIView(APIView):
             ))
         StudentAnswer.objects.bulk_create(answer_objects)
 
-        percent = (correct_count / len(questions) * 100) if questions else 0
-        result.correct_count = correct_count
-        result.percent = round(percent, 2)
+        final_score, percent = apply_visible_score_penalty(correct_count, len(questions))
+        result.correct_count = final_score
+        result.percent = percent
         result.save(update_fields=['correct_count', 'percent'])
 
         student.status = Student.Status.COMPLETED

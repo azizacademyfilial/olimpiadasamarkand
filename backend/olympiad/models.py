@@ -3,30 +3,9 @@ from django.db import models
 from django.utils import timezone
 
 
-<<<<<<< HEAD
-DEFAULT_BRANCHES = [
-    'Niyozbosh',
-    'Xalqabod',
-    'Gulbahor',
-    'Kasblar',
-    'Kids1',
-    'Kids2',
-    "Do’stobod",
-    'Olmazor',
-    'Chinoz',
-    'Krasin',
-    'Pitiletka',
-    "Qo’rg’oncha",
-    'Kids 3',
-    "Oqqo’rg’on",
-    'Alimkent',
-    'Boshqa',
-]
-=======
 # Filiallar endi oldindan qattiq ro'yxat qilib berilmaydi.
 # Admin Excel yuklaganda yoki paneldan qo'shganda filial avtomatik Branch jadvaliga yoziladi.
 DEFAULT_BRANCHES = []
->>>>>>> d760793 (update admin hacker design and results export)
 
 BRANCH_CHOICES = tuple((branch, branch) for branch in DEFAULT_BRANCHES)
 

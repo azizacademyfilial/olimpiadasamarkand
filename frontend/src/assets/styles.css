@@ -2010,8 +2010,6 @@ body {
     width: 100%;
   }
 }
-<<<<<<< HEAD
-=======
 
 /* Admin result answer details */
 .result-detail-modal {
@@ -2845,4 +2843,249 @@ body {
     display: none;
   }
 }
->>>>>>> d760793 (update admin hacker design and results export)
+
+/* =========================================================
+   HACKER ADMIN CONTRAST FIX — dark/neon palette cleanup
+   Qora yozuv va mos tushmagan ranglarni to'g'rilash
+========================================================= */
+.hacker-admin-shell {
+  --bg: #020617;
+  --panel: rgba(2, 12, 9, 0.94);
+  --text: #eafff4;
+  --muted: #9af0c2;
+  --primary: #00ff99;
+  --primary-2: #22d3ee;
+  --green: #00ff99;
+  --red: #fb7185;
+  --yellow: #facc15;
+  --border: rgba(0, 255, 153, 0.20);
+  --shadow: 0 28px 84px rgba(0, 0, 0, 0.38);
+}
+
+.hacker-admin-shell,
+.hacker-admin-shell .admin-main,
+.hacker-admin-shell .content-wrap {
+  color: #eafff4 !important;
+}
+
+.hacker-admin-shell :is(h1, h2, h3, h4, h5, h6, p, label, td, li, strong, b) {
+  color: #eafff4;
+}
+
+.hacker-admin-shell :is(span, small, .muted-text, .empty-cell, .modal-head p, .page-head p, .topbar p) {
+  color: #9af0c2 !important;
+}
+
+.hacker-admin-shell :is(.panel, .topbar, .page-head, .table-wrap, .mini-card, .center-card, .question-view-card, .test-row, .empty-state, .bulk-action-bar, .info-card, .word-format-box, .inline-create-box, .locked-center-box, .edit-student-modal, .delete-confirm-modal, .result-detail-modal) {
+  background: linear-gradient(145deg, rgba(3, 18, 13, 0.96), rgba(2, 6, 23, 0.94)) !important;
+  border-color: rgba(0, 255, 153, 0.22) !important;
+  color: #eafff4 !important;
+}
+
+.hacker-admin-shell :is(.panel, .table-wrap, .mini-card, .center-card, .question-view-card, .test-row, .empty-state, .bulk-action-bar, .info-card, .word-format-box, .inline-create-box, .locked-center-box, .edit-student-modal, .delete-confirm-modal, .result-detail-modal)::before {
+  color: inherit;
+}
+
+.hacker-admin-shell .section-title span,
+.hacker-admin-shell .test-row small,
+.hacker-admin-shell .center-card span,
+.hacker-admin-shell .center-card-stats small,
+.hacker-admin-shell .mini-card span,
+.hacker-admin-shell .mini-card small,
+.hacker-admin-shell .answer-meta-grid span,
+.hacker-admin-shell .result-detail-summary span,
+.hacker-admin-shell .public-result-details span {
+  color: #9af0c2 !important;
+}
+
+.hacker-admin-shell .test-row:hover,
+.hacker-admin-shell .test-row.active,
+.hacker-admin-shell .center-card:hover,
+.hacker-admin-shell .center-card.active {
+  background: linear-gradient(145deg, rgba(0, 255, 153, 0.14), rgba(34, 211, 238, 0.08)) !important;
+  border-color: rgba(0, 255, 153, 0.48) !important;
+}
+
+.hacker-admin-shell .test-row strong,
+.hacker-admin-shell .center-card-stats b,
+.hacker-admin-shell .locked-center-box b,
+.hacker-admin-shell .mini-stats-row span,
+.hacker-admin-shell .code-pill,
+.hacker-admin-shell .mental-summary-pill {
+  color: #00150d !important;
+  background: linear-gradient(135deg, #00ff99, #22d3ee) !important;
+  border-color: rgba(255, 255, 255, 0.16) !important;
+}
+
+.hacker-admin-shell .question-number,
+.hacker-admin-shell .version-filter-btn.active {
+  background: #00ff99 !important;
+  color: #00150d !important;
+  box-shadow: 0 0 22px rgba(0, 255, 153, 0.18);
+}
+
+.hacker-admin-shell .version-filter-btn,
+.hacker-admin-shell .question-version-badge,
+.hacker-admin-shell .answer-card-head span {
+  background: rgba(0, 255, 153, 0.10) !important;
+  border-color: rgba(0, 255, 153, 0.28) !important;
+  color: #b7ffd9 !important;
+}
+
+.hacker-admin-shell .question-view-card h4,
+.hacker-admin-shell .question-text,
+.hacker-admin-shell .answer-box,
+.hacker-admin-shell .answer-box b,
+.hacker-admin-shell .option-review-item span,
+.hacker-admin-shell .answer-detail-card,
+.hacker-admin-shell .answer-detail-card *:not(.primary-btn):not(.secondary-btn):not(.danger-btn),
+.hacker-admin-shell .result-detail-modal *:not(.primary-btn):not(.secondary-btn):not(.danger-btn):not(.modal-close-btn) {
+  color: #eafff4 !important;
+}
+
+.hacker-admin-shell .answer-box,
+.hacker-admin-shell .option-review-item,
+.hacker-admin-shell .answer-detail-card,
+.hacker-admin-shell .result-detail-summary div,
+.hacker-admin-shell .answer-meta-grid div {
+  background: rgba(0, 0, 0, 0.26) !important;
+  border-color: rgba(0, 255, 153, 0.22) !important;
+}
+
+.hacker-admin-shell .answer-box.correct,
+.hacker-admin-shell .answer-detail-card.answer-ok,
+.hacker-admin-shell .option-review-item.correct-option {
+  background: rgba(0, 255, 153, 0.13) !important;
+  border-color: rgba(0, 255, 153, 0.58) !important;
+  color: #eafff4 !important;
+}
+
+.hacker-admin-shell .answer-detail-card.answer-bad,
+.hacker-admin-shell .option-review-item.student-selected:not(.correct-option) {
+  background: rgba(251, 113, 133, 0.12) !important;
+  border-color: rgba(251, 113, 133, 0.52) !important;
+}
+
+.hacker-admin-shell .correct-answer,
+.hacker-admin-shell .success-text {
+  color: #00ff99 !important;
+}
+
+.hacker-admin-shell .error-text {
+  color: #fecaca !important;
+}
+
+.hacker-admin-shell .delete-warning-box,
+.hacker-admin-shell .delete-warning-box b,
+.hacker-admin-shell .delete-warning-box span {
+  color: #fecaca !important;
+  background: rgba(127, 29, 29, 0.22) !important;
+  border-color: rgba(251, 113, 133, 0.36) !important;
+}
+
+.hacker-admin-shell table,
+.hacker-admin-shell thead,
+.hacker-admin-shell tbody,
+.hacker-admin-shell tr,
+.hacker-admin-shell td,
+.hacker-admin-shell th {
+  color: #eafff4 !important;
+}
+
+.hacker-admin-shell th {
+  background: linear-gradient(135deg, rgba(0, 255, 153, 0.14), rgba(34, 211, 238, 0.08)) !important;
+  color: #00ff99 !important;
+}
+
+.hacker-admin-shell tbody tr:nth-child(even) {
+  background: rgba(0, 255, 153, 0.025) !important;
+}
+
+.hacker-admin-shell input,
+.hacker-admin-shell select,
+.hacker-admin-shell textarea {
+  caret-color: #00ff99;
+  color: #eafff4 !important;
+  background: rgba(0, 7, 5, 0.68) !important;
+}
+
+.hacker-admin-shell input:-webkit-autofill,
+.hacker-admin-shell input:-webkit-autofill:hover,
+.hacker-admin-shell input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #eafff4 !important;
+  transition: background-color 9999s ease-in-out 0s;
+  box-shadow: 0 0 0 1000px #03120d inset !important;
+}
+
+.hacker-admin-shell select option {
+  color: #eafff4 !important;
+  background: #03120d !important;
+}
+
+.hacker-admin-shell .secondary-btn,
+.hacker-admin-shell .ghost-btn,
+.hacker-admin-shell .copy-code-btn,
+.hacker-admin-shell .template-link {
+  color: #d7ffe9 !important;
+  background: rgba(0, 255, 153, 0.10) !important;
+  border: 1px solid rgba(0, 255, 153, 0.30) !important;
+}
+
+.hacker-admin-shell .primary-btn:hover,
+.hacker-admin-shell .secondary-btn:hover,
+.hacker-admin-shell .ghost-btn:hover,
+.hacker-admin-shell .copy-code-btn:hover,
+.hacker-admin-shell .template-link:hover {
+  filter: brightness(1.08);
+}
+
+.hacker-admin-shell .modal-close-btn {
+  color: #00150d !important;
+  background: #00ff99 !important;
+  border-color: rgba(255, 255, 255, 0.18) !important;
+}
+
+.hacker-admin-shell .status-badge,
+.hacker-admin-shell .status-badge * {
+  color: currentColor !important;
+}
+
+.hacker-admin-shell .status-not_started {
+  background: rgba(251, 113, 133, 0.12) !important;
+  color: #fb7185 !important;
+}
+.hacker-admin-shell .status-in_progress {
+  background: rgba(250, 204, 21, 0.12) !important;
+  color: #facc15 !important;
+}
+.hacker-admin-shell .status-completed {
+  background: rgba(0, 255, 153, 0.12) !important;
+  color: #00ff99 !important;
+}
+
+.admin-auth-page,
+.admin-auth-card,
+.admin-auth-card :is(h1, p, label, span) {
+  color: #eafff4 !important;
+}
+
+.admin-auth-card .student-panel-link {
+  color: #00150d !important;
+  background: linear-gradient(135deg, #00ff99, #22d3ee) !important;
+  border-color: rgba(255, 255, 255, 0.18) !important;
+}
+
+.admin-auth-card .error-box {
+  color: #fecaca !important;
+  background: rgba(127, 29, 29, 0.24) !important;
+  border: 1px solid rgba(251, 113, 133, 0.40) !important;
+}
+
+@media (max-width: 640px) {
+  .hacker-admin-shell .topbar,
+  .hacker-admin-shell .page-head,
+  .hacker-admin-shell .panel,
+  .hacker-admin-shell .table-wrap {
+    border-radius: 20px;
+  }
+}

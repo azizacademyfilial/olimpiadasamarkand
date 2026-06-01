@@ -45,10 +45,7 @@
               <th>Nechta to‘g‘ri</th>
               <th>Foiz</th>
               <th>Vaqt</th>
-<<<<<<< HEAD
-=======
               <th>Javoblar</th>
->>>>>>> d760793 (update admin hacker design and results export)
             </tr>
           </thead>
           <tbody>
@@ -64,11 +61,6 @@
               <td><b>{{ r.correct_count }}/{{ r.total_questions }}</b></td>
               <td>{{ r.percent }}%</td>
               <td>{{ formatSeconds(r.spent_seconds) }}</td>
-<<<<<<< HEAD
-            </tr>
-            <tr v-if="!results.length">
-              <td colspan="11" class="empty-cell">Natija topilmadi</td>
-=======
               <td>
                 <button class="secondary-btn small-action-btn" @click="openResultDetails(r)">
                   Javoblarni ko‘rish
@@ -77,14 +69,11 @@
             </tr>
             <tr v-if="!results.length">
               <td colspan="12" class="empty-cell">Natija topilmadi</td>
->>>>>>> d760793 (update admin hacker design and results export)
             </tr>
           </tbody>
         </table>
       </div>
     </div>
-<<<<<<< HEAD
-=======
 
     <div v-if="selectedResult" class="modal-backdrop" @click.self="closeResultDetails">
       <div class="result-detail-modal">
@@ -175,7 +164,6 @@
         </div>
       </div>
     </div>
->>>>>>> d760793 (update admin hacker design and results export)
   </div>
 </template>
 
@@ -187,10 +175,7 @@ import { useCenters } from '../composables/useCenters'
 import { fetchCurrentAdmin, getStoredAdminProfile, isMainAdmin } from '../utils/auth'
 
 const results = ref([])
-<<<<<<< HEAD
-=======
 const selectedResult = ref(null)
->>>>>>> d760793 (update admin hacker design and results export)
 const currentAdmin = ref(getStoredAdminProfile())
 const { branches, loadBranches, addBranch } = useBranches()
 const { centers, loadCenters } = useCenters()
@@ -200,13 +185,10 @@ const branchMessage = ref('')
 const branchError = ref('')
 const filters = reactive({ center: '', branch: '' })
 const mainAdmin = computed(() => isMainAdmin(currentAdmin.value))
-<<<<<<< HEAD
-=======
 const optionLetters = ['A', 'B', 'C', 'D']
 const normalAnswers = computed(() => selectedResult.value?.answers || [])
 const mentalAnswers = computed(() => selectedResult.value?.mental_answers || [])
 const isMentalResult = computed(() => mentalAnswers.value.length > 0)
->>>>>>> d760793 (update admin hacker design and results export)
 
 function formatSeconds(seconds) {
   const total = Number(seconds || 0)
@@ -215,8 +197,6 @@ function formatSeconds(seconds) {
   return `${min} daq ${sec} sek`
 }
 
-<<<<<<< HEAD
-=======
 function answerLabel(value) {
   return value ? value : 'Belgilanmagan'
 }
@@ -241,7 +221,6 @@ function closeResultDetails() {
   selectedResult.value = null
 }
 
->>>>>>> d760793 (update admin hacker design and results export)
 async function createBranch() {
   branchMessage.value = ''
   branchError.value = ''
@@ -285,11 +264,7 @@ async function downloadExcel() {
   const url = window.URL.createObjectURL(new Blob([res.data]))
   const link = document.createElement('a')
   link.href = url
-<<<<<<< HEAD
-  link.setAttribute('download', 'olimpiada_natijalari.xlsx')
-=======
   link.setAttribute('download', 'olimpiada_natijalari_filiallar.xlsx')
->>>>>>> d760793 (update admin hacker design and results export)
   document.body.appendChild(link)
   link.click()
   link.remove()

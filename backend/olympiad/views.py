@@ -15,7 +15,11 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+<<<<<<< HEAD
 from .models import Center, Branch, Subject, Level, Student, Question, Result, StudentAnswer, MentalTask, BRANCH_CHOICES, DEFAULT_BRANCHES
+=======
+from .models import Center, Branch, Subject, Level, Student, Question, Result, StudentAnswer, MentalTask
+>>>>>>> d760793 (update admin hacker design and results export)
 
 def is_mental_subject(subject_name):
     normalized = subject_name.lower().replace("'", '').replace('‘', '').replace('’', '')
@@ -327,6 +331,7 @@ def normalize_branch(value):
     if not clean:
         return ''
 
+<<<<<<< HEAD
     branch_map = {branch_key(branch): branch for branch in DEFAULT_BRANCHES}
     try:
         branch_map.update({branch_key(branch.name): branch.name for branch in Branch.objects.all()})
@@ -338,6 +343,23 @@ def normalize_branch(value):
 def ensure_default_branches():
     for branch_name in DEFAULT_BRANCHES:
         Branch.objects.get_or_create(name=branch_name)
+=======
+    try:
+        existing = Branch.objects.filter(name__iexact=clean).first()
+        if existing:
+            return existing.name
+    except Exception:
+        pass
+    return clean
+
+
+def ensure_branch_exists(branch_name):
+    clean = normalize_branch(branch_name)
+    if not clean:
+        return ''
+    Branch.objects.get_or_create(name=clean)
+    return clean
+>>>>>>> d760793 (update admin hacker design and results export)
 
 
 class CenterViewSet(viewsets.ModelViewSet):
@@ -410,10 +432,13 @@ class BranchViewSet(viewsets.ModelViewSet):
     serializer_class = BranchSerializer
     permission_classes = [IsAdminUser]
 
+<<<<<<< HEAD
     def list(self, request, *args, **kwargs):
         ensure_default_branches()
         return super().list(request, *args, **kwargs)
 
+=======
+>>>>>>> d760793 (update admin hacker design and results export)
     def create(self, request, *args, **kwargs):
         if not is_main_admin(request.user):
             return Response({'detail': 'Sizga filial qo‘shishga ruxsat yo‘q.'}, status=status.HTTP_403_FORBIDDEN)
@@ -512,7 +537,11 @@ class StudentViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         user_center = get_user_center(self.request.user)
+<<<<<<< HEAD
         branch = normalize_branch(serializer.validated_data.get('branch')) or get_user_branch(self.request.user) or 'Boshqa'
+=======
+        branch = ensure_branch_exists(serializer.validated_data.get('branch')) or ensure_branch_exists(get_user_branch(self.request.user)) or 'Boshqa'
+>>>>>>> d760793 (update admin hacker design and results export)
         save_kwargs = {
             'branch': branch,
             'status': Student.Status.NOT_STARTED,
@@ -653,9 +682,12 @@ class StudentViewSet(viewsets.ModelViewSet):
                 else:
                     center = None
 
+<<<<<<< HEAD
                 if not branch_name:
                     branch_name = 'Boshqa'
 
+=======
+>>>>>>> d760793 (update admin hacker design and results export)
                 if not any([full_name, first_name, last_name, subject_name, level_name, center_name, branch_name]):
                     continue
 
@@ -666,6 +698,7 @@ class StudentViewSet(viewsets.ModelViewSet):
                     })
                     continue
 
+<<<<<<< HEAD
                 allowed_branches = {branch_key(branch.name) for branch in Branch.objects.all()} | {branch_key(branch) for branch in DEFAULT_BRANCHES}
                 if branch_key(branch_name) not in allowed_branches:
                     errors.append({
@@ -673,6 +706,9 @@ class StudentViewSet(viewsets.ModelViewSet):
                         'error': f"Filial noto‘g‘ri: {branch_name}",
                     })
                     continue
+=======
+                branch_name = ensure_branch_exists(branch_name)
+>>>>>>> d760793 (update admin hacker design and results export)
 
                 subject, _ = Subject.objects.get_or_create(name=subject_name)
                 level, _ = Level.objects.get_or_create(subject=subject, name=level_name, defaults={'duration_minutes': 30})
@@ -806,7 +842,11 @@ class QuestionViewSet(viewsets.ModelViewSet):
 
 
 class ResultViewSet(viewsets.ReadOnlyModelViewSet):
+<<<<<<< HEAD
     queryset = Result.objects.select_related('student', 'student__subject', 'student__level', 'student__center').prefetch_related('answers', 'mental_answers').all()
+=======
+    queryset = Result.objects.select_related('student', 'student__subject', 'student__level', 'student__center').prefetch_related('answers__question', 'mental_answers').all()
+>>>>>>> d760793 (update admin hacker design and results export)
     serializer_class = ResultSerializer
     permission_classes = [IsAdminUser]
 
@@ -830,6 +870,7 @@ class ResultViewSet(viewsets.ReadOnlyModelViewSet):
 
     @action(detail=False, methods=['get'], url_path='export-excel')
     def export_excel(self, request):
+<<<<<<< HEAD
         wb = Workbook()
         ws = wb.active
         ws.title = 'Natijalar'
@@ -869,6 +910,76 @@ class ResultViewSet(viewsets.ReadOnlyModelViewSet):
         for column_cells in ws.columns:
             max_length = max(len(str(cell.value)) if cell.value is not None else 0 for cell in column_cells)
             ws.column_dimensions[get_column_letter(column_cells[0].column)].width = min(max_length + 3, 40)
+=======
+        results = list(self.get_queryset())
+
+        wb = Workbook()
+        default_ws = wb.active
+        wb.remove(default_ws)
+
+        headers = [
+            '№', 'Ism Familya', 'Fan', 'Daraja', 'Version', "O'quv markaz", 'Filial', 'Status code',
+            "Nechta to'g'ri", 'Jami savollar', 'Foiz', 'Boshlangan vaqti',
+            'Tugatgan vaqti', 'Sarflagan vaqt'
+        ]
+        header_fill = PatternFill('solid', fgColor='1F4E79')
+
+        def safe_sheet_title(name, used_titles):
+            clean = str(name or 'Filialsiz').strip() or 'Filialsiz'
+            for char in ['\\', '/', '*', '?', ':', '[', ']']:
+                clean = clean.replace(char, '-')
+            clean = clean[:31] or 'Filialsiz'
+            title = clean
+            counter = 2
+            while title in used_titles:
+                suffix = f' {counter}'
+                title = f'{clean[:31 - len(suffix)]}{suffix}'
+                counter += 1
+            used_titles.add(title)
+            return title
+
+        grouped = {}
+        for result in results:
+            branch_name = result.student.branch or 'Filialsiz'
+            grouped.setdefault(branch_name, []).append(result)
+
+        if not grouped:
+            grouped['Natijalar'] = []
+
+        used_titles = set()
+        for branch_name in sorted(grouped.keys(), key=lambda item: str(item).lower()):
+            ws = wb.create_sheet(title=safe_sheet_title(branch_name, used_titles))
+            ws.append(headers)
+
+            for cell in ws[1]:
+                cell.font = Font(bold=True, color='FFFFFF')
+                cell.fill = header_fill
+                cell.alignment = Alignment(horizontal='center')
+
+            for idx, result in enumerate(grouped[branch_name], start=1):
+                spent = str(timedelta(seconds=result.spent_seconds))
+                ws.append([
+                    idx,
+                    result.student.full_name,
+                    result.student.subject.name,
+                    result.student.level.name,
+                    f"Version {result.student.selected_version}" if result.student.selected_version else '—',
+                    result.student.center.name,
+                    result.student.branch,
+                    result.student.code,
+                    result.correct_count,
+                    result.total_questions,
+                    round(float(result.percent or 0), 1),
+                    timezone.localtime(result.started_at).strftime('%Y-%m-%d %H:%M:%S') if result.started_at else '',
+                    timezone.localtime(result.finished_at).strftime('%Y-%m-%d %H:%M:%S') if result.finished_at else '',
+                    spent,
+                ])
+
+            ws.freeze_panes = 'A2'
+            for column_cells in ws.columns:
+                max_length = max(len(str(cell.value)) if cell.value is not None else 0 for cell in column_cells)
+                ws.column_dimensions[get_column_letter(column_cells[0].column)].width = min(max_length + 3, 40)
+>>>>>>> d760793 (update admin hacker design and results export)
 
         output = BytesIO()
         wb.save(output)
@@ -878,7 +989,11 @@ class ResultViewSet(viewsets.ReadOnlyModelViewSet):
             output.read(),
             content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         )
+<<<<<<< HEAD
         response['Content-Disposition'] = 'attachment; filename="olimpiada_natijalari.xlsx"'
+=======
+        response['Content-Disposition'] = 'attachment; filename="olimpiada_natijalari_filiallar.xlsx"'
+>>>>>>> d760793 (update admin hacker design and results export)
         return response
 
 

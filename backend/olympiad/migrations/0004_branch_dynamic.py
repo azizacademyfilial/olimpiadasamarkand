@@ -2,6 +2,7 @@
 from django.db import migrations, models
 
 
+<<<<<<< HEAD
 DEFAULT_BRANCHES = [
     'Niyozbosh',
     'Xalqabod',
@@ -20,6 +21,9 @@ DEFAULT_BRANCHES = [
     'Alimkent',
     'Boshqa',
 ]
+=======
+DEFAULT_BRANCHES = []
+>>>>>>> d760793 (update admin hacker design and results export)
 
 
 def seed_default_branches(apps, schema_editor):

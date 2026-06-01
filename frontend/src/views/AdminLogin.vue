@@ -1,9 +1,18 @@
 <template>
+<<<<<<< HEAD
   <div class="auth-page">
     <div class="auth-card">
       <div class="brand-circle brand-icon-only">🏆</div>
       <h1>Al-Aziz Academy</h1>
       <p>Admin panelga xavfsiz kirish</p>
+=======
+  <div class="auth-page admin-auth-page">
+    <div class="auth-card admin-auth-card">
+      <div class="brand-circle brand-icon-only">⌬</div>
+      <span class="admin-login-kicker">SECURE ACCESS // AL-AZIZ</span>
+      <h1>Admin Panel</h1>
+      <p>Himoyalangan boshqaruv tizimiga kirish</p>
+>>>>>>> d760793 (update admin hacker design and results export)
 
       <form @submit.prevent="login" class="form-grid">
         <label>
@@ -15,7 +24,11 @@
           <input v-model="form.password" type="password" placeholder="••••••••" required />
         </label>
         <button class="primary-btn" :disabled="loading">
+<<<<<<< HEAD
           {{ loading ? 'Kirilmoqda...' : 'Kirish' }}
+=======
+          {{ loading ? 'Tekshirilmoqda...' : 'ACCESS GRANTED' }}
+>>>>>>> d760793 (update admin hacker design and results export)
         </button>
       </form>
 

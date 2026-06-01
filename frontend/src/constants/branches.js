@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 export const BRANCHES = [
   'Niyozbosh',
   'Xalqabod',
@@ -16,3 +17,6 @@ export const BRANCHES = [
   'Alimkent',
   'Boshqa',
 ]
+=======
+export const BRANCHES = []
+>>>>>>> d760793 (update admin hacker design and results export)

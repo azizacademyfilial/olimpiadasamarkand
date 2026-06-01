@@ -45,6 +45,10 @@
               <th>Nechta to‘g‘ri</th>
               <th>Foiz</th>
               <th>Vaqt</th>
+<<<<<<< HEAD
+=======
+              <th>Javoblar</th>
+>>>>>>> d760793 (update admin hacker design and results export)
             </tr>
           </thead>
           <tbody>
@@ -60,14 +64,118 @@
               <td><b>{{ r.correct_count }}/{{ r.total_questions }}</b></td>
               <td>{{ r.percent }}%</td>
               <td>{{ formatSeconds(r.spent_seconds) }}</td>
+<<<<<<< HEAD
             </tr>
             <tr v-if="!results.length">
               <td colspan="11" class="empty-cell">Natija topilmadi</td>
+=======
+              <td>
+                <button class="secondary-btn small-action-btn" @click="openResultDetails(r)">
+                  Javoblarni ko‘rish
+                </button>
+              </td>
+            </tr>
+            <tr v-if="!results.length">
+              <td colspan="12" class="empty-cell">Natija topilmadi</td>
+>>>>>>> d760793 (update admin hacker design and results export)
             </tr>
           </tbody>
         </table>
       </div>
     </div>
+<<<<<<< HEAD
+=======
+
+    <div v-if="selectedResult" class="modal-backdrop" @click.self="closeResultDetails">
+      <div class="result-detail-modal">
+        <div class="modal-head">
+          <div>
+            <h3>{{ selectedResult.student_full_name }} javoblari</h3>
+            <p>
+              {{ selectedResult.subject_name }} • {{ selectedResult.level_name }}
+              <span v-if="selectedResult.student_selected_version"> • Version {{ selectedResult.student_selected_version }}</span>
+            </p>
+          </div>
+          <button type="button" class="modal-close-btn" @click="closeResultDetails">×</button>
+        </div>
+
+        <div class="result-detail-summary">
+          <div>
+            <span>Code</span>
+            <b>{{ selectedResult.student_code }}</b>
+          </div>
+          <div>
+            <span>Natija</span>
+            <b>{{ selectedResult.correct_count }}/{{ selectedResult.total_questions }}</b>
+          </div>
+          <div>
+            <span>Foiz</span>
+            <b>{{ selectedResult.percent }}%</b>
+          </div>
+          <div>
+            <span>Vaqt</span>
+            <b>{{ formatSeconds(selectedResult.spent_seconds) }}</b>
+          </div>
+        </div>
+
+        <div v-if="isMentalResult" class="answers-list">
+          <div v-for="task in mentalAnswers" :key="task.id" class="answer-detail-card" :class="task.is_correct ? 'answer-ok' : 'answer-bad'">
+            <div class="answer-card-head">
+              <strong>{{ task.task_order }}-misol</strong>
+              <span>{{ task.is_correct ? 'To‘g‘ri' : 'Noto‘g‘ri' }}</span>
+            </div>
+            <p class="question-text">{{ task.expression }}</p>
+            <div class="answer-meta-grid">
+              <div>
+                <span>O‘quvchi javobi</span>
+                <b>{{ task.student_answer ?? 'Belgilanmagan' }}</b>
+              </div>
+              <div>
+                <span>To‘g‘ri javob</span>
+                <b>{{ task.correct_answer }}</b>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div v-else class="answers-list">
+          <div v-for="(answer, index) in normalAnswers" :key="answer.id" class="answer-detail-card" :class="answer.is_correct ? 'answer-ok' : 'answer-bad'">
+            <div class="answer-card-head">
+              <strong>{{ index + 1 }}-savol</strong>
+              <span>{{ answer.is_correct ? 'To‘g‘ri' : 'Noto‘g‘ri' }}</span>
+            </div>
+            <p class="question-text">{{ answer.question_text }}</p>
+
+            <div class="option-review-list">
+              <div v-for="letter in optionLetters" :key="letter" :class="optionClass(answer, letter)">
+                <b>{{ letter }}</b>
+                <span>{{ optionText(answer, letter) }}</span>
+              </div>
+            </div>
+
+            <div class="answer-meta-grid">
+              <div>
+                <span>O‘quvchi belgilagan</span>
+                <b>{{ answerLabel(answer.selected_answer) }}</b>
+              </div>
+              <div>
+                <span>To‘g‘ri javob</span>
+                <b>{{ answerLabel(answer.correct_answer) }}</b>
+              </div>
+            </div>
+          </div>
+
+          <div v-if="!normalAnswers.length" class="empty-cell">
+            Bu natija uchun savollar bo‘yicha javoblar topilmadi.
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button class="secondary-btn" @click="closeResultDetails">Yopish</button>
+        </div>
+      </div>
+    </div>
+>>>>>>> d760793 (update admin hacker design and results export)
   </div>
 </template>
 
@@ -79,6 +187,10 @@ import { useCenters } from '../composables/useCenters'
 import { fetchCurrentAdmin, getStoredAdminProfile, isMainAdmin } from '../utils/auth'
 
 const results = ref([])
+<<<<<<< HEAD
+=======
+const selectedResult = ref(null)
+>>>>>>> d760793 (update admin hacker design and results export)
 const currentAdmin = ref(getStoredAdminProfile())
 const { branches, loadBranches, addBranch } = useBranches()
 const { centers, loadCenters } = useCenters()
@@ -88,6 +200,13 @@ const branchMessage = ref('')
 const branchError = ref('')
 const filters = reactive({ center: '', branch: '' })
 const mainAdmin = computed(() => isMainAdmin(currentAdmin.value))
+<<<<<<< HEAD
+=======
+const optionLetters = ['A', 'B', 'C', 'D']
+const normalAnswers = computed(() => selectedResult.value?.answers || [])
+const mentalAnswers = computed(() => selectedResult.value?.mental_answers || [])
+const isMentalResult = computed(() => mentalAnswers.value.length > 0)
+>>>>>>> d760793 (update admin hacker design and results export)
 
 function formatSeconds(seconds) {
   const total = Number(seconds || 0)
@@ -96,6 +215,33 @@ function formatSeconds(seconds) {
   return `${min} daq ${sec} sek`
 }
 
+<<<<<<< HEAD
+=======
+function answerLabel(value) {
+  return value ? value : 'Belgilanmagan'
+}
+
+function optionText(answer, letter) {
+  return answer?.[`option_${letter.toLowerCase()}`] || ''
+}
+
+function optionClass(answer, letter) {
+  return {
+    'option-review-item': true,
+    'student-selected': answer?.selected_answer === letter,
+    'correct-option': answer?.correct_answer === letter,
+  }
+}
+
+function openResultDetails(result) {
+  selectedResult.value = result
+}
+
+function closeResultDetails() {
+  selectedResult.value = null
+}
+
+>>>>>>> d760793 (update admin hacker design and results export)
 async function createBranch() {
   branchMessage.value = ''
   branchError.value = ''
@@ -139,7 +285,11 @@ async function downloadExcel() {
   const url = window.URL.createObjectURL(new Blob([res.data]))
   const link = document.createElement('a')
   link.href = url
+<<<<<<< HEAD
   link.setAttribute('download', 'olimpiada_natijalari.xlsx')
+=======
+  link.setAttribute('download', 'olimpiada_natijalari_filiallar.xlsx')
+>>>>>>> d760793 (update admin hacker design and results export)
   document.body.appendChild(link)
   link.click()
   link.remove()

@@ -12,7 +12,11 @@
         <h3>Excel fayl tanlang</h3>
         <div class="upload-box">
           <input type="file" accept=".xlsx,.xls" @change="onFileChange" />
+<<<<<<< HEAD
           <p>Kerakli ustunlar: №, Ism familya, Fan, Daraja, O'quv markaz, Filial</p>
+=======
+          <p>Kerakli ustunlar: №, Ism familya, Fan, Daraja, O'quv markaz, Filial. Filial Excelda qanday yozilsa, avtomatik qo‘shiladi.</p>
+>>>>>>> d760793 (update admin hacker design and results export)
         </div>
 
         <button class="primary-btn" :disabled="!file || loading" @click="upload">
@@ -69,7 +73,11 @@
                 <td>English</td>
                 <td>Beginner</td>
                 <td>Al-Aziz Academy</td>
+<<<<<<< HEAD
                 <td>Niyozbosh</td>
+=======
+                <td>Navbahor</td>
+>>>>>>> d760793 (update admin hacker design and results export)
               </tr>
               <tr>
                 <td>2</td>
@@ -77,7 +85,11 @@
                 <td>Kampyuter</td>
                 <td>Kampyuter 1</td>
                 <td>Al-Aziz Academy</td>
+<<<<<<< HEAD
                 <td>Xalqabod</td>
+=======
+                <td>Paxtazor</td>
+>>>>>>> d760793 (update admin hacker design and results export)
               </tr>
               <tr>
                 <td>3</td>
@@ -85,13 +97,21 @@
                 <td>IT</td>
                 <td>Frontend 1</td>
                 <td>Al-Aziz Academy</td>
+<<<<<<< HEAD
                 <td>Boshqa</td>
+=======
+                <td>Olmazor</td>
+>>>>>>> d760793 (update admin hacker design and results export)
               </tr>
             </tbody>
           </table>
         </div>
         <p class="hint-text">
+<<<<<<< HEAD
           Fan, Daraja va Filial nomini admin paneldagi nomlar bilan bir xil yozing.
+=======
+          Fan va Daraja nomini to‘g‘ri yozing. Filial nomi Excel faylda qanday yozilgan bo‘lsa, shu nom bilan avtomatik qo‘shiladi.
+>>>>>>> d760793 (update admin hacker design and results export)
         </p>
       </div>
     </div>

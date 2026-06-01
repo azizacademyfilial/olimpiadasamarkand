@@ -108,11 +108,26 @@ class QuestionForExamSerializer(serializers.ModelSerializer):
 
 class StudentAnswerSerializer(serializers.ModelSerializer):
     question_text = serializers.CharField(source='question.text', read_only=True)
+<<<<<<< HEAD
+=======
+    option_a = serializers.CharField(source='question.option_a', read_only=True)
+    option_b = serializers.CharField(source='question.option_b', read_only=True)
+    option_c = serializers.CharField(source='question.option_c', read_only=True)
+    option_d = serializers.CharField(source='question.option_d', read_only=True)
+>>>>>>> d760793 (update admin hacker design and results export)
     correct_answer = serializers.CharField(source='question.correct_answer', read_only=True)
 
     class Meta:
         model = StudentAnswer
+<<<<<<< HEAD
         fields = ['id', 'question', 'question_text', 'selected_answer', 'correct_answer', 'is_correct']
+=======
+        fields = [
+            'id', 'question', 'question_text',
+            'option_a', 'option_b', 'option_c', 'option_d',
+            'selected_answer', 'correct_answer', 'is_correct'
+        ]
+>>>>>>> d760793 (update admin hacker design and results export)
 
 
 class MentalTaskSerializer(serializers.ModelSerializer):

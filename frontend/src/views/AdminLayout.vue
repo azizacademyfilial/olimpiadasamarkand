@@ -19,6 +19,7 @@
         <RouterLink to="/admin/questions">▸ Testlar</RouterLink>
         <RouterLink to="/admin/results">▸ Natijalar</RouterLink>
         <RouterLink to="/admin/mental-answers">▸ Mental javoblari</RouterLink>
+        <RouterLink v-if="mainAdmin" to="/admin/hacker">▸ Hacker</RouterLink>
       </nav>
 
       <div class="hacker-side-status">

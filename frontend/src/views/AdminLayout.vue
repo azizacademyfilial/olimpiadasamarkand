@@ -1,7 +1,7 @@
 <template>
-  <div class="admin-shell hacker-admin-shell" :class="{ 'light-admin-shell': isLightMode }">
+  <div class="admin-shell hacker-admin-shell" :class="{ 'light-admin-shell': isLightMode, 'hacker-fullscreen-shell': isHackerRoute }">
     <div class="hacker-matrix-layer" aria-hidden="true"></div>
-    <aside class="sidebar hacker-sidebar" :class="{ open: menuOpen }">
+    <aside v-if="!isHackerRoute" class="sidebar hacker-sidebar" :class="{ open: menuOpen }">
       <div class="sidebar-brand">
         <div class="brand-circle small brand-icon-only">⌬</div>
         <div>
@@ -19,7 +19,6 @@
         <RouterLink to="/admin/questions">▸ Testlar</RouterLink>
         <RouterLink to="/admin/results">▸ Natijalar</RouterLink>
         <RouterLink to="/admin/mental-answers">▸ Mental javoblari</RouterLink>
-        <RouterLink v-if="mainAdmin" to="/admin/hacker">▸ Hacker</RouterLink>
       </nav>
 
       <div class="hacker-side-status">
@@ -29,7 +28,7 @@
     </aside>
 
     <main class="admin-main">
-      <header class="topbar hacker-topbar">
+      <header v-if="!isHackerRoute" class="topbar hacker-topbar">
         <button class="menu-btn" @click="menuOpen = !menuOpen">☰</button>
         <div class="hacker-title-block">
           <span class="hacker-eyebrow">/ root / admin-control</span>
@@ -38,6 +37,7 @@
           <p v-else>{{ adminTitle }} o‘quvchilari va natijalari</p>
         </div>
         <div class="hacker-top-actions">
+          <RouterLink v-if="mainAdmin" to="/admin/hacker" class="hacker-top-link">Hacker</RouterLink>
           <button class="theme-toggle-btn" type="button" @click="toggleTheme" :title="isLightMode ? 'Hacker modega qaytish' : 'Light modega o‘tish'">
             <span class="moon-icon">🌙</span>
             <b>{{ isLightMode ? 'Hacker mode' : 'Light mode' }}</b>
@@ -56,15 +56,17 @@
 
 <script setup>
 import { computed, onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { clearAuthStorage, fetchCurrentAdmin, getStoredAdminProfile, isMainAdmin } from '../utils/auth'
 
+const route = useRoute()
 const router = useRouter()
 const menuOpen = ref(false)
 const isLightMode = ref(false)
 const currentAdmin = ref(getStoredAdminProfile())
 const mainAdmin = computed(() => isMainAdmin(currentAdmin.value))
 const adminTitle = computed(() => currentAdmin.value?.center_name || currentAdmin.value?.assigned_center_name || currentAdmin.value?.branch || 'Bosh admin')
+const isHackerRoute = computed(() => route.path === '/admin/hacker')
 
 function toggleTheme() {
   isLightMode.value = !isLightMode.value

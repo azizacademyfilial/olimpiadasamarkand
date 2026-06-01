@@ -1,5 +1,5 @@
 <template>
-  <div class="admin-shell hacker-admin-shell">
+  <div class="admin-shell hacker-admin-shell" :class="{ 'light-admin-shell': isLightMode }">
     <div class="hacker-matrix-layer" aria-hidden="true"></div>
     <aside class="sidebar hacker-sidebar" :class="{ open: menuOpen }">
       <div class="sidebar-brand">
@@ -37,6 +37,10 @@
           <p v-else>{{ adminTitle }} o‘quvchilari va natijalari</p>
         </div>
         <div class="hacker-top-actions">
+          <button class="theme-toggle-btn" type="button" @click="toggleTheme" :title="isLightMode ? 'Hacker modega qaytish' : 'Light modega o‘tish'">
+            <span class="moon-icon">🌙</span>
+            <b>{{ isLightMode ? 'Hacker mode' : 'Light mode' }}</b>
+          </button>
           <span class="hacker-live-dot"><i></i> LIVE</span>
           <RouterLink to="/student" class="student-link">O‘quvchi kirishi</RouterLink>
         </div>
@@ -56,9 +60,15 @@ import { clearAuthStorage, fetchCurrentAdmin, getStoredAdminProfile, isMainAdmin
 
 const router = useRouter()
 const menuOpen = ref(false)
+const isLightMode = ref(false)
 const currentAdmin = ref(getStoredAdminProfile())
 const mainAdmin = computed(() => isMainAdmin(currentAdmin.value))
 const adminTitle = computed(() => currentAdmin.value?.center_name || currentAdmin.value?.assigned_center_name || currentAdmin.value?.branch || 'Bosh admin')
+
+function toggleTheme() {
+  isLightMode.value = !isLightMode.value
+  localStorage.setItem('admin-theme', isLightMode.value ? 'light' : 'hacker')
+}
 
 function logout() {
   clearAuthStorage()
@@ -66,6 +76,8 @@ function logout() {
 }
 
 onMounted(async () => {
+  isLightMode.value = localStorage.getItem('admin-theme') === 'light'
+
   try {
     currentAdmin.value = await fetchCurrentAdmin()
   } catch {

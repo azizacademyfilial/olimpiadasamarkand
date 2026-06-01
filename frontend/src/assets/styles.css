@@ -3089,3 +3089,381 @@ body {
     border-radius: 20px;
   }
 }
+
+/* =========================================================
+   ADMIN THEME TOGGLE + LIGHT MODE FIX
+   Oy tugmasi bosilganda oq fon / qora yozuv / rangli tugmalar
+========================================================= */
+.theme-toggle-btn {
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  border: 1px solid rgba(0, 255, 153, 0.26);
+  border-radius: 999px;
+  padding: 9px 14px;
+  cursor: pointer;
+  font-weight: 950;
+  color: #00150d;
+  background: linear-gradient(135deg, #facc15, #fef08a);
+  box-shadow: 0 0 28px rgba(250, 204, 21, 0.18);
+  transition: 0.22s ease;
+}
+.theme-toggle-btn:hover { transform: translateY(-2px); filter: brightness(1.04); }
+.theme-toggle-btn .moon-icon {
+  width: 26px;
+  height: 26px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 999px;
+  background: #020617;
+  box-shadow: inset -4px 0 0 rgba(255, 255, 255, 0.20), 0 0 14px rgba(250, 204, 21, .28);
+}
+
+/* Hacker mode: yashil fonlarda yozuv aniq ko'rinsin */
+.hacker-admin-shell:not(.light-admin-shell) :is(.primary-btn, .code-pill, .mental-summary-pill, .success-box, .option-review-item.correct-option b, .question-number, .version-filter-btn.active) {
+  color: #00150d !important;
+  text-shadow: none !important;
+}
+.hacker-admin-shell:not(.light-admin-shell) :is(.success-box *, .primary-btn *, .code-pill *, .mental-summary-pill *) {
+  color: #00150d !important;
+}
+.hacker-admin-shell:not(.light-admin-shell) .stat-card.green,
+.hacker-admin-shell:not(.light-admin-shell) .stat-card.green :is(span, strong, b, p) {
+  color: #00150d !important;
+  text-shadow: none !important;
+}
+.hacker-admin-shell:not(.light-admin-shell) .stat-card.green {
+  background: linear-gradient(135deg, #00ff99, #9af0c2) !important;
+}
+
+/* LIGHT MODE */
+.hacker-admin-shell.light-admin-shell {
+  --bg: #f8fafc;
+  --panel: #ffffff;
+  --text: #0f172a;
+  --muted: #475569;
+  --primary: #2563eb;
+  --green: #16a34a;
+  --red: #dc2626;
+  --yellow: #ca8a04;
+  --border: #e2e8f0;
+  --shadow: 0 18px 48px rgba(15, 23, 42, 0.08);
+  color: #0f172a !important;
+  background:
+    radial-gradient(circle at 12% 0%, rgba(37, 99, 235, 0.08), transparent 26%),
+    radial-gradient(circle at 90% 8%, rgba(250, 204, 21, 0.10), transparent 26%),
+    #f8fafc !important;
+}
+.hacker-admin-shell.light-admin-shell::before,
+.hacker-admin-shell.light-admin-shell::after,
+.hacker-admin-shell.light-admin-shell .hacker-matrix-layer {
+  display: none !important;
+}
+.hacker-admin-shell.light-admin-shell,
+.hacker-admin-shell.light-admin-shell .admin-main,
+.hacker-admin-shell.light-admin-shell .content-wrap,
+.hacker-admin-shell.light-admin-shell :is(h1, h2, h3, h4, h5, h6, p, label, td, li, strong, b, span, small) {
+  color: #0f172a !important;
+  text-shadow: none !important;
+}
+.hacker-admin-shell.light-admin-shell :is(.muted-text, small, .page-head p, .topbar p, .modal-head p, .mini-card span, .mini-card small, .section-title span, .answer-meta-grid span, .result-detail-summary span) {
+  color: #475569 !important;
+}
+
+.hacker-admin-shell.light-admin-shell .hacker-sidebar {
+  color: #0f172a !important;
+  background: #ffffff !important;
+  border-right: 1px solid #e2e8f0 !important;
+  box-shadow: 14px 0 36px rgba(15, 23, 42, 0.06) !important;
+}
+.hacker-admin-shell.light-admin-shell .hacker-sidebar::before {
+  background: linear-gradient(90deg, #ef4444, #facc15, #22c55e, #2563eb) !important;
+}
+.hacker-admin-shell.light-admin-shell .sidebar-brand {
+  background: linear-gradient(135deg, #ffffff, #f1f5f9) !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06) !important;
+}
+.hacker-admin-shell.light-admin-shell .sidebar-brand::after { display: none !important; }
+.hacker-admin-shell.light-admin-shell .sidebar-brand h2 { color: #0f172a !important; }
+.hacker-admin-shell.light-admin-shell .sidebar-brand span { color: #64748b !important; }
+.hacker-admin-shell.light-admin-shell .brand-circle {
+  color: #ffffff !important;
+  background: linear-gradient(135deg, #2563eb, #16a34a) !important;
+  box-shadow: 0 12px 26px rgba(37, 99, 235, 0.18) !important;
+}
+.hacker-admin-shell.light-admin-shell .sidebar nav a {
+  color: #1e293b !important;
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+  font-family: inherit;
+}
+.hacker-admin-shell.light-admin-shell .sidebar nav a:hover,
+.hacker-admin-shell.light-admin-shell .sidebar nav a.router-link-active {
+  color: #ffffff !important;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
+  border-color: #2563eb !important;
+  box-shadow: 0 12px 24px rgba(37, 99, 235, 0.18) !important;
+  transform: translateX(3px);
+}
+.hacker-admin-shell.light-admin-shell .hacker-side-status {
+  color: #166534 !important;
+  background: #dcfce7 !important;
+  border-color: #86efac !important;
+}
+.hacker-admin-shell.light-admin-shell .hacker-side-status span,
+.hacker-admin-shell.light-admin-shell .hacker-live-dot i {
+  background: #16a34a !important;
+  box-shadow: 0 0 12px rgba(22, 163, 74, 0.32) !important;
+}
+.hacker-admin-shell.light-admin-shell .logout {
+  color: #ffffff !important;
+  background: linear-gradient(135deg, #ef4444, #dc2626) !important;
+  border-color: #ef4444 !important;
+}
+
+.hacker-admin-shell.light-admin-shell .hacker-topbar {
+  background: rgba(255, 255, 255, 0.92) !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  box-shadow: 0 12px 34px rgba(15, 23, 42, 0.06) !important;
+}
+.hacker-admin-shell.light-admin-shell .hacker-eyebrow {
+  color: #2563eb !important;
+  font-family: inherit;
+  letter-spacing: .08em;
+}
+.hacker-admin-shell.light-admin-shell .hacker-live-dot {
+  color: #166534 !important;
+  background: #dcfce7 !important;
+  border: 1px solid #86efac !important;
+}
+.hacker-admin-shell.light-admin-shell .theme-toggle-btn {
+  color: #ffffff !important;
+  background: linear-gradient(135deg, #2563eb, #38bdf8) !important;
+  border-color: #2563eb !important;
+  box-shadow: 0 12px 26px rgba(37, 99, 235, 0.18) !important;
+}
+.hacker-admin-shell.light-admin-shell .theme-toggle-btn b { color: #ffffff !important; }
+.hacker-admin-shell.light-admin-shell .theme-toggle-btn .moon-icon {
+  background: #ffffff;
+  box-shadow: inset -4px 0 0 rgba(37, 99, 235, 0.25), 0 0 14px rgba(37, 99, 235, 0.14);
+}
+.hacker-admin-shell.light-admin-shell .menu-btn {
+  color: #0f172a !important;
+  background: #ffffff !important;
+  border-color: #e2e8f0 !important;
+}
+.hacker-admin-shell.light-admin-shell .student-link {
+  color: #ffffff !important;
+  background: linear-gradient(135deg, #16a34a, #22c55e) !important;
+  border-color: #16a34a !important;
+  box-shadow: 0 12px 24px rgba(22, 163, 74, 0.16) !important;
+}
+
+.hacker-admin-shell.light-admin-shell .page-head,
+.hacker-admin-shell.light-admin-shell :is(.panel, .question-card, .table-wrap, .mini-card, .center-card, .question-view-card, .test-row, .empty-state, .bulk-action-bar, .info-card, .word-format-box, .inline-create-box, .locked-center-box, .edit-student-modal, .delete-confirm-modal, .result-detail-modal) {
+  color: #0f172a !important;
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 18px 48px rgba(15, 23, 42, 0.07) !important;
+  backdrop-filter: none !important;
+}
+.hacker-admin-shell.light-admin-shell .page-head {
+  background: linear-gradient(135deg, #ffffff, #f8fafc) !important;
+}
+.hacker-admin-shell.light-admin-shell :is(.panel, .question-card)::before { display: none !important; }
+.hacker-admin-shell.light-admin-shell :is(.panel:hover, .center-card:hover, .stat-card:hover) {
+  transform: translateY(-2px);
+  box-shadow: 0 22px 54px rgba(15, 23, 42, 0.10) !important;
+}
+
+.hacker-admin-shell.light-admin-shell input,
+.hacker-admin-shell.light-admin-shell select,
+.hacker-admin-shell.light-admin-shell textarea {
+  color: #0f172a !important;
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  box-shadow: none !important;
+  caret-color: #2563eb;
+}
+.hacker-admin-shell.light-admin-shell input::placeholder,
+.hacker-admin-shell.light-admin-shell textarea::placeholder {
+  color: #94a3b8 !important;
+}
+.hacker-admin-shell.light-admin-shell input:focus,
+.hacker-admin-shell.light-admin-shell select:focus,
+.hacker-admin-shell.light-admin-shell textarea:focus {
+  border-color: #2563eb !important;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12) !important;
+}
+.hacker-admin-shell.light-admin-shell select option {
+  color: #0f172a !important;
+  background: #ffffff !important;
+}
+.hacker-admin-shell.light-admin-shell input:-webkit-autofill,
+.hacker-admin-shell.light-admin-shell input:-webkit-autofill:hover,
+.hacker-admin-shell.light-admin-shell input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #0f172a !important;
+  box-shadow: 0 0 0 1000px #ffffff inset !important;
+}
+
+.hacker-admin-shell.light-admin-shell table,
+.hacker-admin-shell.light-admin-shell thead,
+.hacker-admin-shell.light-admin-shell tbody,
+.hacker-admin-shell.light-admin-shell tr,
+.hacker-admin-shell.light-admin-shell td,
+.hacker-admin-shell.light-admin-shell th {
+  color: #0f172a !important;
+}
+.hacker-admin-shell.light-admin-shell th {
+  color: #334155 !important;
+  background: #f1f5f9 !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  font-family: inherit;
+}
+.hacker-admin-shell.light-admin-shell td {
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+.hacker-admin-shell.light-admin-shell tbody tr:nth-child(even) {
+  background: #f8fafc !important;
+}
+.hacker-admin-shell.light-admin-shell tbody tr:hover {
+  background: #eff6ff !important;
+}
+
+.hacker-admin-shell.light-admin-shell .primary-btn {
+  color: #ffffff !important;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
+  border: 1px solid #2563eb !important;
+  box-shadow: 0 12px 26px rgba(37, 99, 235, 0.18) !important;
+}
+.hacker-admin-shell.light-admin-shell .secondary-btn,
+.hacker-admin-shell.light-admin-shell .template-link,
+.hacker-admin-shell.light-admin-shell .version-filter-btn {
+  color: #713f12 !important;
+  background: linear-gradient(135deg, #fef3c7, #facc15) !important;
+  border: 1px solid #f59e0b !important;
+  box-shadow: 0 12px 24px rgba(245, 158, 11, 0.14) !important;
+}
+.hacker-admin-shell.light-admin-shell .danger-btn {
+  color: #ffffff !important;
+  background: linear-gradient(135deg, #ef4444, #dc2626) !important;
+  border: 1px solid #ef4444 !important;
+  box-shadow: 0 12px 24px rgba(239, 68, 68, 0.16) !important;
+}
+.hacker-admin-shell.light-admin-shell .copy-code-btn,
+.hacker-admin-shell.light-admin-shell .code-pill,
+.hacker-admin-shell.light-admin-shell .mental-summary-pill,
+.hacker-admin-shell.light-admin-shell .version-filter-btn.active,
+.hacker-admin-shell.light-admin-shell .question-number {
+  color: #052e16 !important;
+  background: linear-gradient(135deg, #86efac, #22c55e) !important;
+  border: 1px solid #22c55e !important;
+  box-shadow: 0 12px 24px rgba(34, 197, 94, 0.16) !important;
+}
+.hacker-admin-shell.light-admin-shell .ghost-btn {
+  color: #0f172a !important;
+  background: #f1f5f9 !important;
+  border: 1px solid #cbd5e1 !important;
+}
+.hacker-admin-shell.light-admin-shell :is(.primary-btn, .secondary-btn, .danger-btn, .copy-code-btn, .code-pill, .mental-summary-pill, .theme-toggle-btn) * {
+  color: inherit !important;
+}
+
+.hacker-admin-shell.light-admin-shell .stat-card {
+  color: #ffffff !important;
+  border: none !important;
+  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.10) !important;
+}
+.hacker-admin-shell.light-admin-shell .stat-card::after { display: none !important; }
+.hacker-admin-shell.light-admin-shell .stat-card :is(span, strong, b, p) {
+  color: inherit !important;
+  text-shadow: none !important;
+}
+.hacker-admin-shell.light-admin-shell .stat-card.dark { background: linear-gradient(135deg, #0f172a, #334155) !important; color: #ffffff !important; }
+.hacker-admin-shell.light-admin-shell .stat-card.red { background: linear-gradient(135deg, #dc2626, #fb7185) !important; color: #ffffff !important; }
+.hacker-admin-shell.light-admin-shell .stat-card.yellow { background: linear-gradient(135deg, #facc15, #f59e0b) !important; color: #422006 !important; }
+.hacker-admin-shell.light-admin-shell .stat-card.green { background: linear-gradient(135deg, #22c55e, #86efac) !important; color: #052e16 !important; }
+.hacker-admin-shell.light-admin-shell .stat-card.blue { background: linear-gradient(135deg, #2563eb, #60a5fa) !important; color: #ffffff !important; }
+.hacker-admin-shell.light-admin-shell .stat-card.purple { background: linear-gradient(135deg, #7c3aed, #c084fc) !important; color: #ffffff !important; }
+
+.hacker-admin-shell.light-admin-shell .success-box {
+  color: #052e16 !important;
+  background: #dcfce7 !important;
+  border: 1px solid #86efac !important;
+}
+.hacker-admin-shell.light-admin-shell .error-box {
+  color: #7f1d1d !important;
+  background: #fee2e2 !important;
+  border: 1px solid #fecaca !important;
+}
+.hacker-admin-shell.light-admin-shell .hint-box,
+.hacker-admin-shell.light-admin-shell .upload-box {
+  color: #1e3a8a !important;
+  background: #eff6ff !important;
+  border: 1px solid #bfdbfe !important;
+}
+.hacker-admin-shell.light-admin-shell .success-box *,
+.hacker-admin-shell.light-admin-shell .error-box *,
+.hacker-admin-shell.light-admin-shell .hint-box * {
+  color: inherit !important;
+}
+
+.hacker-admin-shell.light-admin-shell .status-badge {
+  border: 1px solid currentColor !important;
+}
+.hacker-admin-shell.light-admin-shell .status-not_started { background: #fee2e2 !important; color: #dc2626 !important; }
+.hacker-admin-shell.light-admin-shell .status-in_progress { background: #fef3c7 !important; color: #92400e !important; }
+.hacker-admin-shell.light-admin-shell .status-completed { background: #dcfce7 !important; color: #166534 !important; }
+
+.hacker-admin-shell.light-admin-shell .modal-backdrop {
+  background: rgba(15, 23, 42, 0.38) !important;
+  backdrop-filter: blur(8px);
+}
+.hacker-admin-shell.light-admin-shell :is(.answer-detail-card, .result-detail-summary div, .answer-meta-grid div, .option-review-item, .answer-box, .delete-warning-box) {
+  color: #0f172a !important;
+  background: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+}
+.hacker-admin-shell.light-admin-shell :is(.answer-detail-card, .result-detail-summary div, .answer-meta-grid div, .option-review-item, .answer-box, .delete-warning-box) * {
+  color: inherit !important;
+}
+.hacker-admin-shell.light-admin-shell .answer-detail-card.answer-ok,
+.hacker-admin-shell.light-admin-shell .option-review-item.correct-option,
+.hacker-admin-shell.light-admin-shell .answer-box.correct {
+  color: #052e16 !important;
+  background: #dcfce7 !important;
+  border-color: #86efac !important;
+}
+.hacker-admin-shell.light-admin-shell .answer-detail-card.answer-bad,
+.hacker-admin-shell.light-admin-shell .option-review-item.student-selected:not(.correct-option) {
+  color: #7f1d1d !important;
+  background: #fee2e2 !important;
+  border-color: #fecaca !important;
+}
+.hacker-admin-shell.light-admin-shell .option-review-item b {
+  color: #ffffff !important;
+  background: #2563eb !important;
+}
+.hacker-admin-shell.light-admin-shell .option-review-item.correct-option b {
+  color: #052e16 !important;
+  background: #86efac !important;
+}
+.hacker-admin-shell.light-admin-shell .option-review-item.student-selected b {
+  color: #422006 !important;
+  background: #facc15 !important;
+}
+.hacker-admin-shell.light-admin-shell .modal-close-btn {
+  color: #ffffff !important;
+  background: #ef4444 !important;
+  border: 1px solid #ef4444 !important;
+}
+
+@media (max-width: 980px) {
+  .theme-toggle-btn,
+  .hacker-admin-shell .theme-toggle-btn {
+    width: 100%;
+  }
+}
